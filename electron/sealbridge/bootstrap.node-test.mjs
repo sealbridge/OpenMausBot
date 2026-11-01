@@ -104,11 +104,21 @@ import { bootstrapCore } from ${JSON.stringify(new URL("./bootstrap.mjs", import
 import { fixtureKeyring } from ${JSON.stringify(new URL("./fixtures/encrypted-keyring.mjs", import.meta.url).href)};
 const { did, server } = await bootstrapCore({ packageDir: ${JSON.stringify(packageDir)}, dataDir: process.env.SEALBRIDGE_DATA_DIR,
   keyringLoader: async () => fixtureKeyring(process.env.SEALBRIDGE_DATA_DIR) });
+await (await import("node:fs/promises")).writeFile(process.env.SEALBRIDGE_DATA_DIR + "/child-home.json", JSON.stringify(process.env.HOME));
 process.send({ type: "identity", did });
 await server.serve(process.stdin, process.stdout);
+const { readdir, readFile, writeFile } = await import("node:fs/promises");
+const path = (await import("node:path")).default;
+${files.toString()}
+const record = new (fixtureKeyring(process.env.SEALBRIDGE_DATA_DIR).Entry)("fixture", "requester", { linux: { store: "secret-service" } }).getPassword();
+const key = JSON.parse(record);
+for (const bytes of await files(process.env.HOME)) {
+  if ([record, ...["d", "p", "q", "dp", "dq", "qi", "k"].map(field => key[field]).filter(Boolean), ["PRIVATE", "KEY"].join(" ")].some(value => bytes.includes(Buffer.from(value))) || /"(?:kty|d)"\\s*:/.test(bytes.toString())) throw new Error("Fixture home contains key material");
+}
+await writeFile(path.join(process.env.SEALBRIDGE_DATA_DIR, "home-checked"), "checked");
 process.disconnect();
 `);
-  const logs = [], replies = [];
+  const logs = [], replies = [], homes = [];
   async function launch() {
     let host;
     const service = createCoreService({ dataDir: dir, hostFactory: options => {
@@ -125,13 +135,17 @@ process.disconnect();
     assert.equal(publicState.state, "ready");
     assert.deepEqual(Object.keys(publicState).sort(), ["did", "state", "version"]);
     logs.push(host.stderr);
+    const home = JSON.parse(await readFile(path.join(dir, "child-home.json"), "utf8"));
+    homes.push(...await files(home));
     await service.close();
+    assert.equal(await readFile(path.join(dir, "home-checked"), "utf8"), "checked");
+    await rm(path.join(dir, "home-checked"));
     return publicState.did;
   }
   assert.equal(await launch(), await launch());
   const secretRecord = new (fixtureKeyring(dir).Entry)("fixture", "requester", { linux: { store: "secret-service" } }).getPassword();
   const secret = JSON.parse(secretRecord).d;
-  for (const bytes of [...await files(dir), ...[...replies, ...logs].map(value => Buffer.from(value))]) {
+  for (const bytes of [...await files(dir), ...homes, ...[...replies, ...logs].map(value => Buffer.from(value))]) {
     assert.equal(bytes.includes(Buffer.from(secret)), false);
     assert.equal(bytes.includes(Buffer.from(secretRecord)), false);
     assert.equal(bytes.includes(Buffer.from("PRIVATE KEY")), false);

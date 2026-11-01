@@ -30,6 +30,7 @@ if (mode === "hang") {
     process.stderr.write("z".repeat(10000));
   }
   if (frame.method === "fixture/rpc-error") { send({ jsonrpc: "2.0", id: frame.id, error: { code: -32000, message: "acp-invite:fixture-only" } }); return; }
+  if (frame.method === "fixture/garbage") { process.stdout.write("invalid\n"); return; }
   if (frame.method === "fixture/slow") return;
   if (frame.method === "fixture/exit-record") writeFileSync(new URL("./called.txt", import.meta.url), "called");
   if (mode === "split") {

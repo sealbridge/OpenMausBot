@@ -21,6 +21,7 @@ export class McpHost {
   #buffer = Buffer.alloc(0);
   #stderr = Buffer.alloc(0);
   #failure;
+  #intentional = false;
   #closing;
   #start;
   #closed;
@@ -57,9 +58,7 @@ export class McpHost {
       this.#closed = new Promise(resolve => this.#child.once("close", resolve));
       this.#child.on("error", () => this.#fail("SEALBRIDGE_SPAWN_FAILED"));
       this.#child.on("exit", () => {
-        const unexpected = !this.#closing;
         this.#fail("SEALBRIDGE_HOST_EXITED");
-        if (unexpected) this.#options.onExit?.();
       });
       this.#child.on("message", message => {
         if (message?.type === "identity" && /^did:key:z[1-9A-HJ-NP-Za-km-z]{40,100}$/.test(message.did)) this.#options.onIdentity?.(message.did);
@@ -141,16 +140,19 @@ export class McpHost {
   }
 
   #fail(code) {
+    const notify = !this.#failure && !this.#intentional;
     this.#failure ??= code;
     for (const { reject, timer } of this.#pending.values()) {
       clearTimeout(timer);
       reject(new SealbridgeError(this.#failure));
     }
     this.#pending.clear();
-    void this.close();
+    if (notify) this.#options.onExit?.();
+    this.#closing ??= this.#shutdown();
   }
 
   close() {
+    this.#intentional = true;
     this.#closing ??= this.#shutdown();
     return this.#closing;
   }
