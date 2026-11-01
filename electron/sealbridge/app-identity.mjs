@@ -1,10 +1,9 @@
 import { app } from "electron";
 import { mkdirSync } from "node:fs";
-import { join } from "node:path";
-import { product } from "./product.mjs";
+import { product, userDataPath } from "./product.mjs";
 
 app.setName(product.productName);
-const userData = join(app.getPath("appData"), product.dataDirName);
+const userData = userDataPath(app.getPath("appData"));
 mkdirSync(userData, { recursive: true });
 app.setPath("userData", userData);
 if (process.platform === "win32") app.setAppUserModelId(product.appId);

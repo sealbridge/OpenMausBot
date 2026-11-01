@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 export function validateProduct(value) {
   const fields = ["productName", "packageName", "desktopName", "executableName", "shortName", "appId", "urlScheme", "dataDirName", "cliPackage", "cliVersion", "defaultRelay", "updateChannel"];
@@ -26,3 +27,7 @@ export function validateProduct(value) {
 }
 
 export const product = validateProduct(JSON.parse(readFileSync(new URL("../../branding/product.json", import.meta.url), "utf8")));
+
+export function userDataPath(appDataDir) {
+  return join(appDataDir, product.dataDirName);
+}

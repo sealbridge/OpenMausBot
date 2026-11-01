@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import vm from "node:vm";
 import test from "node:test";
-import { product, validateProduct } from "./sealbridge/product.mjs";
+import { product, userDataPath, validateProduct } from "./sealbridge/product.mjs";
 import { chatLinkFrom } from "./chat-link.mjs";
 import { packageUrlFromDeepLink } from "./package-link.mjs";
 import { isCloudDeepLink } from "./cloud-entry.mjs";
@@ -22,7 +22,7 @@ for (const newline of ["\n", "\r\n"]) {
     assert.ok(main.startsWith('import "./sealbridge/app-identity.mjs";'));
     const values = {};
     vm.runInNewContext(initialization, {
-      mkdirSync: fs.mkdirSync, join: path.join, product, process: { platform: "win32" },
+      mkdirSync: fs.mkdirSync, userDataPath, product, process: { platform: "win32" },
       app: {
         getPath: key => { assert.equal(key, "appData"); return home; },
         setPath: (key, value) => { assert.ok(fs.statSync(value).isDirectory()); values[key] = value; },

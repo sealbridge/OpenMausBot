@@ -1,4 +1,4 @@
-import { product } from "../electron/sealbridge/product.mjs";
+import { product, userDataPath } from "../electron/sealbridge/product.mjs";
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
 import {
@@ -49,18 +49,17 @@ writeFileSync(
   path.join(dataDir, "config.json"),
   JSON.stringify({ instances: { ghost: { driver: "not-a-real-driver", displayName: "Ghost" } } }),
 );
-for (const appName of [product.productName]) {
-  const userData = path.join(xdgConfig, appName);
-  mkdirSync(userData, { recursive: true, mode: 0o700 });
-  chmodSync(userData, 0o700);
-  writeFileSync(
-    path.join(userData, "cua-local-control.json"),
-    // Keep this explicit: schema 2 prevents a safe build's opt-in from arming
-    // an older Linux package that started Cua without the seat-safety flags.
-    JSON.stringify({ schemaVersion: 2, linuxLocalControlEnabled: true }),
-    { mode: 0o600 },
-  );
-}
+const userData = userDataPath(xdgConfig);
+mkdirSync(userData, { recursive: true, mode: 0o700 });
+chmodSync(userData, 0o700);
+writeFileSync(
+  path.join(userData, "cua-local-control.json"),
+  // Keep this explicit: schema 2 prevents a safe build's opt-in from arming
+  // an older Linux package that started Cua without the seat-safety flags.
+  JSON.stringify({ schemaVersion: 2, linuxLocalControlEnabled: true }),
+  { mode: 0o600 },
+);
+
 writeFileSync(sentinel, linuxPackageCuaDriverSource({ marker, state: fakeState, wayland }));
 chmodSync(sentinel, 0o755);
 
@@ -236,12 +235,9 @@ try {
   if (sessionBlocked) {
     await waitForExit();
     if (existsSync(marker)) throw new Error("release safety block still invoked a CUA executable");
-    const activeUserData = [product.productName]
-      .map((name) => path.join(xdgConfig, name))
-      .find((directory) => existsSync(path.join(directory, "cua-connection.json")));
-    if (!activeUserData) throw new Error("release safety smoke could not locate the CUA descriptor");
+    if (!existsSync(path.join(userData, "cua-connection.json"))) throw new Error("release safety smoke could not locate the CUA descriptor");
     const preference = JSON.parse(
-      readFileSync(path.join(activeUserData, "cua-local-control.json"), "utf8"),
+      readFileSync(path.join(userData, "cua-local-control.json"), "utf8"),
     );
     if (preference.linuxLocalControlEnabled !== false) {
       throw new Error("release safety block did not clear the durable Linux opt-in");
@@ -283,10 +279,7 @@ try {
     if (existsSync(marker)) {
       throw new Error(`packaged app invoked the ambient driver:\n${readFileSync(marker, "utf8")}`);
     }
-    const userData = [product.productName]
-      .map((name) => path.join(xdgConfig, name))
-      .find((directory) => existsSync(path.join(directory, "cua-connection.json")));
-    if (!userData) throw new Error("bundled smoke could not locate the CUA descriptor");
+    if (!existsSync(path.join(userData, "cua-connection.json"))) throw new Error("bundled smoke could not locate the CUA descriptor");
     const persistedConnection = JSON.parse(
       readFileSync(path.join(userData, "cua-connection.json"), "utf8"),
     );
@@ -379,10 +372,7 @@ try {
       await delay(50);
     }
     if (staleHealth?.ok) throw new Error("embedded harness survived hard Electron death");
-    const userData = [product.productName]
-      .map((name) => path.join(xdgConfig, name))
-      .find((directory) => existsSync(path.join(directory, "cua-connection.json")));
-    if (!userData) throw new Error("hard-death smoke could not locate the CUA descriptor");
+    if (!existsSync(path.join(userData, "cua-connection.json"))) throw new Error("hard-death smoke could not locate the CUA descriptor");
     const { readCuaConnection } = await import(
       new URL("../dist-server/local-computer.js", import.meta.url)
     );

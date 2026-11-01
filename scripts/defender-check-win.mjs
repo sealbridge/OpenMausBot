@@ -8,7 +8,7 @@
 // settings and installs the app, so it runs only on a GitHub Windows runner.
 //
 //   node scripts/defender-check-win.mjs --installer release/OpenMausBot-<version>-setup.exe --out <folder> [--wait 120]
-import { product } from "../electron/sealbridge/product.mjs";
+import { product, userDataPath } from "../electron/sealbridge/product.mjs";
 import { execFile, execFileSync, spawn } from "node:child_process";
 import { appendFileSync, copyFileSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -425,7 +425,7 @@ async function pressStart() {
 }
 
 function appLog() {
-  const folder = path.join(process.env.APPDATA ?? "", product.productName, "logs");
+  const folder = path.join(userDataPath(process.env.APPDATA ?? ""), "logs");
   const file = path.join(folder, "server.log");
   if (!existsSync(file)) return { file, present: false, lines: [] };
   for (const name of readdirSync(folder)) {
