@@ -4,10 +4,10 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { product } from "./product.mjs";
 import { SealbridgeError } from "./errors.mjs";
-import { redact, containsSecret } from "./redaction.mjs";
+import { containsSecret } from "./redaction.mjs";
 
 export function sanitizedEnvironment(source, home) {
-  const allowed = new Set(["systemroot", "windir", "temp", "tmp", "lang", "lc_all", "tz"]);
+  const allowed = new Set(["systemroot", "windir", "temp", "tmp", "lang", "lc_all", "tz", "dbus_session_bus_address", "xdg_runtime_dir"]);
   const env = Object.fromEntries(Object.entries(source).filter(([key, value]) => allowed.has(key.toLowerCase()) && !containsSecret(value)));
   return { ...env, HOME: home, USERPROFILE: home, APPDATA: home, LOCALAPPDATA: home,
     XDG_CONFIG_HOME: home, XDG_DATA_HOME: home, ELECTRON_RUN_AS_NODE: "1" };
@@ -27,15 +27,15 @@ export class McpHost {
   #options;
 
   constructor({ cliEntry, nodeBinary = process.execPath, timeoutMs = 5000, shutdownMs = 250,
-    maxMessageBytes = 1024 * 1024, maxStderrBytes = 8192, env = process.env } = {}) {
+    maxMessageBytes = 1024 * 1024, maxStderrBytes = 8192, env = process.env, dataDir, onIdentity, onExit, onUnavailable } = {}) {
     if (!path.isAbsolute(cliEntry ?? "") || !path.isAbsolute(nodeBinary) || /\.(?:cmd|bat)$/i.test(nodeBinary) ||
         [timeoutMs, shutdownMs, maxMessageBytes, maxStderrBytes].some(n => !Number.isSafeInteger(n) || n <= 0)) {
       throw new SealbridgeError("SEALBRIDGE_HOST_OPTIONS_INVALID");
     }
-    this.#options = { cliEntry, nodeBinary, timeoutMs, shutdownMs, maxMessageBytes, maxStderrBytes, env };
+    this.#options = { cliEntry, nodeBinary, timeoutMs, shutdownMs, maxMessageBytes, maxStderrBytes, env, dataDir, onIdentity, onExit, onUnavailable };
   }
 
-  get stderr() { return Buffer.from(redact(this.#stderr.toString("utf8"))).subarray(0, this.#options.maxStderrBytes).toString("utf8"); }
+  get stderr() { return this.#stderr.length ? "[REDACTED]".slice(0, this.#options.maxStderrBytes) : ""; }
   get running() { return !!this.#child && !this.#failure && !this.#closing; }
 
   start() {
@@ -52,11 +52,19 @@ export class McpHost {
       }
       const { cliEntry, nodeBinary, env } = this.#options;
       this.#child = spawn(nodeBinary, [cliEntry, "mcp-server", "--relay", product.defaultRelay, "--require-approval"], {
-        shell: false, windowsHide: true, cwd: this.#home, env: sanitizedEnvironment(env, this.#home), stdio: ["pipe", "pipe", "pipe"],
+        shell: false, windowsHide: true, cwd: this.#home, env: { ...sanitizedEnvironment(env, this.#home), ...(this.#options.dataDir ? { SEALBRIDGE_DATA_DIR: this.#options.dataDir } : {}) }, stdio: ["pipe", "pipe", "pipe", "ipc"],
       });
       this.#closed = new Promise(resolve => this.#child.once("close", resolve));
       this.#child.on("error", () => this.#fail("SEALBRIDGE_SPAWN_FAILED"));
-      this.#child.on("exit", () => this.#fail("SEALBRIDGE_HOST_EXITED"));
+      this.#child.on("exit", () => {
+        const unexpected = !this.#closing;
+        this.#fail("SEALBRIDGE_HOST_EXITED");
+        if (unexpected) this.#options.onExit?.();
+      });
+      this.#child.on("message", message => {
+        if (message?.type === "identity" && /^did:key:z[1-9A-HJ-NP-Za-km-z]{40,100}$/.test(message.did)) this.#options.onIdentity?.(message.did);
+        if (message?.type === "unavailable") this.#options.onUnavailable?.();
+      });
       this.#child.stdin.on("error", () => this.#fail("SEALBRIDGE_PIPE_FAILED"));
       this.#child.stdout.on("data", chunk => this.#receive(chunk));
       this.#child.stderr.on("data", chunk => {

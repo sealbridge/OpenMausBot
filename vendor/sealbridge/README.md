@@ -1,0 +1,42 @@
+# Bundled core
+
+Upstream source: https://github.com/sealbridge/sealbridge, commit
+`4569f736ebb2099211bb81ddf3a5eec65dd345c1` (upstream version `0.2.2`).
+The registry's `0.2.2` predates the required key-store contracts, so the desktop
+installs the archived package here, never a registry package with the same version.
+`provenance.json` records SHA-256 hashes; the preparation script verifies both
+archives before `npm ci`. `runtime/sealbridge/package-lock.json` pins the complete
+runtime dependency graph, including `@napi-rs/keyring@2.1.2` and platform natives.
+
+`source.tar.gz` is `git archive --format=tar.gz` of that commit. To rebuild the
+package, extract it into a new temporary directory, install with its frozen
+`pnpm-lock.yaml` using pnpm 10.34.6, then run `pnpm run package:cli` and
+`npm pack --ignore-scripts`. These operations must run in the temporary copy,
+never in the read-only reference clone. Review and update both archive hashes
+and the runtime lockfile together when upgrading.
+
+Run `node scripts/prepare-sealbridge-runtime.mjs --all-architectures` to stage
+x64/arm64 native modules for the build OS. Each architecture is installed using
+npm's `--cpu` selection. Electron Builder copies the matching tree into
+`Resources/sealbridge-runtime`, outside ASAR. The child uses Electron's Node via
+`ELECTRON_RUN_AS_NODE=1`; it does not invoke a user's Node, npm, npx or global CLI.
+The host-architecture tree is also staged for development and fixture tests.
+
+The adapter calls core `selectKeyStore`, `setApplicationKeyStore` and
+`resolveStoredIdentity` to bootstrap the requester identity. The core's
+`KeychainKeyStore` owns key generation, JWK encoding, validation, locking and
+credential storage. Its native module pins Linux to Secret Service. No desktop
+key format or plaintext fallback is involved. Configuration records `keychain`
+using the core's own persistence API. The core receives its explicit private
+data directory under the desktop's userData and a temporary isolated home.
+
+Only public identity messages use Node IPC. MCP stays on stdin/stdout. Child
+stderr is bounded and entirely replaced with a redaction marker; stdout frames
+and raw exception text are never logged. The renderer has only fixed local
+status/retry methods. No tools/call bridge is exposed.
+
+Upstream Apache-2.0 LICENSE and NOTICE are included here and in the installed
+package. Runtime dependencies carry their own license files. Public release
+workflows remain disabled. Native keychain access, signing and packaged startup
+still need acceptance on supported OS installations; automated tests use an
+isolated encrypted fake keyring and never access an existing OS credential.

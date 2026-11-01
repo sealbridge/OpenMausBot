@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "sealbridge": "file:../../vendor/sealbridge/sealbridge-0.2.2.tgz",
+    "@napi-rs/keyring": "2.1.2"
+  }
+}

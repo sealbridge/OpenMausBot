@@ -127,6 +127,10 @@ const bridge = {
   platform: process.platform,
   /** This app's version, and whether this page is this app's own (served by this computer, not a server from the Server menu). */
   app: { version: appVersion, ownPage: isLocalPage },
+  sealbridge: {
+    status: () => ipcRenderer.invoke("sealbridge:status"),
+    retry: () => ipcRenderer.invoke("sealbridge:retry"),
+  },
   // Safe on a cloud page: the person chooses in a native menu, or a circle of the rail main listed (only for this app's
   // page and a hosted Cloud's, never addresses), and only from their click; no saved-list reads, host files or secrets.
   workspaces: {

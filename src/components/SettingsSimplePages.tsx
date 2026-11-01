@@ -1,3 +1,4 @@
+import { SealbridgeStatusRow } from "./SealbridgeStatusRow";
 import type { ReactNode } from "react";
 import type { AppSettingsSection } from "@/state/store";
 import { t } from "@/lib/i18n";
@@ -197,6 +198,7 @@ export function SimpleUpdatesPage({ remoteActive }: { remoteActive: boolean }) {
   return (
     <SettingsGroup block="updates">
       <SettingsRows>
+        <SealbridgeStatusRow />
         {window.ogb?.updater ? <UpdatesRow title={versionTitle()} /> : <ServerUpdatesRow />}
         <UpdatesConsentRow />
         {!remoteActive && <ReplayTourRow />}

@@ -42,3 +42,6 @@ deploy/podman/.env.*
 /.env
 
 /build/sealbridge-runtime/
+
+/runtime/sealbridge/node_modules/
+/build/sealbridge-runtime-*/

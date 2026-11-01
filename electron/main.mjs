@@ -1,4 +1,5 @@
 import "./sealbridge/app-identity.mjs";
+import { createCoreService, registerCoreIpc } from "./sealbridge/service.mjs";
 import { app, autoUpdater as nativeAutoUpdater, BrowserWindow, Tray, WebContentsView, clipboard, desktopCapturer, dialog, globalShortcut, ipcMain, Menu, nativeImage, Notification, powerMonitor, powerSaveBlocker, safeStorage, screen, session, shell, systemPreferences, utilityProcess, nativeTheme } from "electron";
 import { createRequire } from "node:module";
 import { randomBytes, randomUUID } from "node:crypto";
@@ -2883,7 +2884,14 @@ setCuaStateListener((connection) => {
   });
 });
 
+let sealbridgeCore;
 app.whenReady().then(async () => {
+  sealbridgeCore = createCoreService({
+    dataDir: path.join(app.getPath("userData"), "sealbridge-core"),
+    resourcesPath: app.isPackaged ? process.resourcesPath : undefined,
+  });
+  registerCoreIpc({ ipcMain, localOnly, service: sealbridgeCore });
+  void sealbridgeCore.start();
   await evictStartupCacheOnce({
     userData: app.getPath("userData"),
     currentVersion: app.getVersion(),
@@ -3215,6 +3223,7 @@ app.on("before-quit", (e) => {
     new Promise((resolve) => setTimeout(resolve, CUA_STOP_TIMEOUT_MS).unref()),
   ]);
   const cleanup = Promise.all([
+    sealbridgeCore?.close(),
     ownedHelperCleanup,
     stoppingServer.then((stopped) => {
       if (!stopped) slog("server child did not stop before desktop exit; retaining the data-directory lease");
