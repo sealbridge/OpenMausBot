@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { product } from "../electron/sealbridge/product.mjs";
 // Capture the companion apps' test fixtures through a real harness and sidecar,
 // against a temporary HOME and the fake engine:
 //
@@ -127,8 +128,8 @@ async function captureFrames(wanted, during) {
 async function main() {
   mkdirSync(OUT, { recursive: true });
   home = mkdtempSync(join(tmpdir(), "companion-fixtures-"));
-  mkdirSync(join(home, ".openmausbot"), { recursive: true });
-  writeFileSync(join(home, ".openmausbot", "config.json"), JSON.stringify({
+  mkdirSync(join(home, `.${product.dataDirName}`), { recursive: true });
+  writeFileSync(join(home, `.${product.dataDirName}`, "config.json"), JSON.stringify({
     profile: PROFILE,
     instances: {
       claude: {

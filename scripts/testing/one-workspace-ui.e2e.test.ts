@@ -1,3 +1,4 @@
+import { product } from "../../electron/sealbridge/product.mjs";
 // Once the person's bots moved to My Cloud, the desktop window is one window onto it: main's own handlers in a real
 // headless Chrome (testing/one-workspace-fixture.ts), My Cloud a real Cloud-mode server and this computer its real,
 // frozen server (testing/cloud-send-fixture.ts). Screenshots go to OMB_ONE_WORKSPACE_SHOTS, else the fixture's folder.
@@ -226,7 +227,7 @@ const PAIR_FORM = "Boolean(document.querySelector('form input') && /pairing code
 
   it("chat links and the Settings key open on My Cloud's page", async () => {
     await onCloudPage();
-    expect(world.openLink(`openmausbot://bot/${nova}`)).toBe(true);
+    expect(world.openLink(`${product.urlScheme}://bot/${nova}`)).toBe(true);
     await until(() => page<string | null>("document.querySelector('textarea[aria-label^=\"Message\"]')?.getAttribute('aria-label') ?? null"), (label) => label === "Message Nova", 20_000, "Nova's chat");
     expect(new URL(world.window.url).origin).toBe(world.cloudOrigin);
     await world.window.screenshot(join(shots, "6-chat-link.png"));
