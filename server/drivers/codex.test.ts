@@ -1870,7 +1870,7 @@ process.stdout.write(JSON.stringify({jsonrpc:'2.0',id:m.id,result})+'\\n');});`)
 
   it.each([
     ["Cloud home", "OMB_CLOUD_ROLE", "home"],
-    ["hosted enterprise", "OMB_ADMIN_URL", "https://admin.example.test"],
+    ["hosted workspace", "OMB_ADMIN_URL", "https://admin.example.test"],
   ])("refuses desktop ChatGPT plan sign-in on %s before accessing credentials or spawning", async (_name, variable, value) => {
     vi.stubEnv(variable, value);
     const spawn = vi.spyOn(procs, "spawnCli").mockImplementation(() => { throw new Error("Unexpected process"); });

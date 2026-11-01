@@ -1673,10 +1673,17 @@ describe("harness HTTP API", () => {
     expect(await statusWithHeaders({ origin: `http://[::1]:${PORT}` })).toBe(200);
   });
 
+  it("reports the standalone OSS edition without an operator notice", async () => {
+    const edition = await api("GET", "/api/edition");
+    expect(edition.status).toBe(200);
+    expect(edition.body).toEqual({ edition: "oss", features: [] });
+    expect((await api("GET", "/api/config")).body.edition).toEqual({ edition: "oss", features: [] });
+  });
+
   it("keeps the fleet screen behind the admin entitlement on the open-source edition", async () => {
     const fleet = await api("GET", "/api/fleet");
     expect(fleet.status).toBe(403);
-    expect(fleet.body.error).toContain("enterprise");
+    expect(fleet.body.error).toContain("unavailable");
     expect((await api("POST", "/api/fleet/workspaces", { slug: "acme", admins: ["a@b.test"] })).status).toBe(403);
     expect((await api("DELETE", "/api/fleet/workspaces/acme")).status).toBe(403);
   });

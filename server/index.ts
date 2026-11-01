@@ -516,7 +516,8 @@ import {
 } from "./turn-dispatch-guard.ts";
 import { createGracefulShutdown } from "./graceful-shutdown.ts";
 import { acquireDataDirLeaseForProcess } from "./data-dir-lease.ts";
-import { createWorkspaceAccess, describeEdition, editionForSettings, editionStatus, entitled, hostedWorkspaceConfiguration, hostedWorkspaceConfigured, licenseWarning, sharedWorkspaceFullAccessConfigured, loadEnterpriseLayer, workspaceMembership, type WorkspaceAccess } from "./enterprise.ts";
+import { describeEdition, editionForSettings, editionStatus, entitled } from "./edition.ts";
+import { HOSTED_WORKSPACE_UNSUPPORTED, createWorkspaceAccess, hostedWorkspaceConfiguration, hostedWorkspaceConfigured, sharedWorkspaceFullAccessConfigured, workspaceMembership, type WorkspaceAccess } from "./workspace-policy.ts";
 import { environmentDescriptor, loadEnvironmentId, serverVersion } from "./environment.ts";
 import { WorkspaceBackupMaintenance } from "./workspace-backup-maintenance.ts";
 import { createWorkspaceBackupRoutes, isWorkspaceBackupSessionControl } from "./workspace-backup-http.ts";
@@ -12585,7 +12586,7 @@ ROUTES.push(createBrowserViewerRoutes({
     return browser ? { botId: bot.id, session: browser.session, spec: browser.spec } : { status: 503, error: "Install the browser first." };
   },
   authorize: async (req, auth) => !HOSTED_WORKSPACE || auth.kind !== "session" ? null
-    : workspaceAccess ? workspaceAccess.authorize(req, auth) : { status: 503, error: "Workspace sign-in is unavailable." },
+    : workspaceAccess ? workspaceAccess.authorize(req, auth) : { status: 503, error: HOSTED_WORKSPACE_UNSUPPORTED },
   current: (botId, session, auth, audience) => {
     const current = store.bot(botId);
     return !!current && current.browser !== false && builtInBrowserEnabled(cfg) && currentBrowserSession(current.id, current.browserProfile, audience) === session
@@ -12716,21 +12717,21 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       res.setHeader("cache-control", "no-store");
       const hosted = hostedWorkspaceConfiguration();
       if (!hosted?.portalMembership || !workspaceAccess || !entitled("admin")) {
-        return json(res, 503, { error: "Hosted workspace readiness is unavailable." });
+        return json(res, 503, { error: HOSTED_WORKSPACE_UNSUPPORTED });
       }
       res.setHeader(HOSTED_CONTRACT_HEADER, String(HOSTED_CONTRACT_VERSION));
       if (hostedModels) res.setHeader(HOSTED_MODEL_POLICY_HEADER, "1");
       return json(res, 200, { ok: true, service: "openmausbot", membershipAuthority: "portal", workspace: hosted.workspace, ...HOSTED_CONTRACT_METADATA });
     }
-    // Hosted workspaces have one sign-in authority: a missing optional layer must never reactivate email/QR credential minting.
+    // Hosted configuration must never reactivate email/QR credential minting.
     if (HOSTED_WORKSPACE) {
       if (method === "POST" && ["/api/auth/pair", "/api/pair", "/api/auth/pairing", "/api/auth/email/start", "/api/auth/email/verify"].includes(path)) {
-        return json(res, 403, { error: "Sign in through the workspace portal." });
+        return json(res, 403, { error: HOSTED_WORKSPACE_UNSUPPORTED });
       }
       if (workspaceAccess) {
         if (await workspaceAccess.handlePublic(req, res, url)) return;
       } else if (path.startsWith("/api/auth/hosted/") || path === "/pair" || (path === "/" && (!isLoopbackHost(req.headers.host) || isProxied(req)))) {
-        return json(res, 503, { error: "Workspace sign-in is unavailable." });
+        return json(res, 503, { error: HOSTED_WORKSPACE_UNSUPPORTED });
       }
     }
     if (method === "POST" && ["/api/auth/pair", "/api/pair", "/api/auth/pairing", "/api/auth/email/start", "/api/auth/email/verify"].includes(path)) {
@@ -12888,7 +12889,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
     if (HOSTED_WORKSPACE && auth.kind === "session") {
       const failure = workspaceAccess
         ? await workspaceAccess.authorize(req, auth)
-        : { status: 503, error: "Workspace sign-in is unavailable." };
+        : { status: 503, error: HOSTED_WORKSPACE_UNSUPPORTED };
       if (failure) return json(res, failure.status, { error: failure.error });
     }
     // A member reaches a restricted bot, its threads, rooms, routines and files exactly as an id that does not exist.
@@ -15603,10 +15604,7 @@ upgrades.attach(server, handleRequest);
 
 moveFreeze.hold(() => calendarCalls.start(), () => calendarCalls.stop());
 
-// Resolve the edition before accepting requests so /api/edition is never a guess.
-console.log(describeEdition(await loadEnterpriseLayer()));
-const startupLicenseWarning = licenseWarning(editionStatus());
-if (startupLicenseWarning) console.warn(startupLicenseWarning);
+console.log(describeEdition(editionStatus()));
 console.log(LOOPBACK.trust === "service"
   ? `local requests: service trust (${LOOPBACK.reason}); without a session, loopback may use only health, the Slack worker's guarded routes and bot capability routes`
   : `local requests: owner trust (${LOOPBACK.reason})`);

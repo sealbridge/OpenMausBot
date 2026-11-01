@@ -518,21 +518,15 @@ AI-provider sign-in. Devices pair once with a short code. The deployment guide i
 
 ## License
 
-[Apache License 2.0](LICENSE) © 2026 Milind Soni and OpenMausBot contributors,
-except `enterprise/`, which is source-available under its
-[own license](enterprise/LICENSE); delete that folder and what remains is the
-open-source edition. Details, including how contributions are signed off, are
-in [LICENSING.md](LICENSING.md).
+[Apache License 2.0](LICENSE) © 2026 Milind Soni and OpenMausBot contributors.
+Third-party components retain their own licenses as listed in
+[NOTICE](NOTICE). See [LICENSING.md](LICENSING.md) for attribution and contribution terms.
 
 Packaged Cua Driver components retain their upstream MIT, SIL OFL 1.1, MPL-2.0, and other dependency terms;
 the corresponding notices, license texts, source locations, and SBOM are in
 [`third_party/cua-driver/`](third_party/cua-driver/) and ship beside the native runtime.
 
-OpenMausBot is an independent, open-source project inspired by Grok Bot. It is
-not affiliated with, endorsed by, or associated with xAI; "Grok" is a trademark
-of its respective owner.
-
-## Fork contract experiment (G0)
+## About this fork
 
 The isolated modules and verification commands are documented in
 [the G0 contracts](docs/sealbridge/g0-contracts.md). The final product name is
@@ -541,4 +535,12 @@ package identity, checked against package.json and electron-builder configuratio
 by the G0 tests. G2 will connect the remaining brand modules and OS integration
 paths and update the visual assets.
 G3 will connect the prepared CLI/runtime to packaging and main-process startup.
-These integration steps are outside G0.
+G1 removes the separately licensed layer and its loader, preserves OSS local
+access and hosted route refusals, and disables public publishing workflows.
+The fork retains the Apache defaults for the server brand; custom brand.json
+files are not applied.
+The G2 and G3 integrations above belong to later milestones.
+
+This fork credits Milind Soni and the OpenMausBot contributors for the upstream
+Apache-2.0 code. See [MODIFICATIONS.md](MODIFICATIONS.md) and the
+[upstream sync procedure](docs/sealbridge/upstream-sync.md).

@@ -1,7 +1,7 @@
 import type { ChatAppsMcp } from "../chat-apps-mcp.ts";
 import type { CloudHomeConfig } from "../cloud-home.ts";
 import type { AppConfig } from "../config.ts";
-import { hostedWorkspaceConfiguration } from "../enterprise.ts";
+import { hostedWorkspaceConfiguration } from "../workspace-policy.ts";
 import type { TeamConnectionsHost } from "../host/team-connections-host.ts";
 import { McpOAuthError, McpSignInError, mcpCallbackOrigin, withMcpSignIn, type McpOAuthManager } from "../mcp-oauth.ts";
 import { brokeredServer, type BrokerPath } from "../bot-box/broker-probe.ts";

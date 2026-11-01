@@ -1,4 +1,4 @@
-import { hostedWorkspaceConfiguration } from "./enterprise.ts";
+import { hostedWorkspaceConfiguration } from "./workspace-policy.ts";
 
 /** Identifiers only: opening the link never grants access to the service. */
 export function hostedSlackManagement(

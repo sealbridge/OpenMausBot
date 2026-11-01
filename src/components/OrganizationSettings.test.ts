@@ -193,21 +193,22 @@ describe("optional desktop Organisation settings", () => {
     expect(fixture.store.dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ botId: "personal-bot" }));
   });
 
-  it("explains a lapsed Admin licence without a sign-in loop and shows Company models unavailable", async () => {
+  it("shows unavailable access without license or renewal prompts", async () => {
     await ready({ ...connected, status: "license-expired" });
     const html = render().html;
-    expect(html).toContain("Your organization&#x27;s OpenMaus Admin license has expired. Contact your admin.");
+    expect(html).toContain("Organization access is currently unavailable.");
     expect(html).not.toContain("Disconnect below, then sign in again");
     expect(html).not.toContain("Sign in with your organization");
-    expect(html).toContain("Unavailable until the licence is renewed");
+    expect(html).not.toMatch(/licen[sc]e|renew/i);
     expect(html).not.toContain("Approved models:");
     expect(button("Refresh")).toBeDefined(); expect(button("Disconnect…")).toBeDefined();
   });
 
-  it("says so when a sign-in finds the Admin licence expired", async () => {
+  it("reports unavailable access after a refused sign-in", async () => {
     await ready({ status: "signed-out", notice: "license-expired" });
     const html = render().html;
-    expect(html).toContain("license has expired. Contact your admin.");
+    expect(html).toContain("Organization access is currently unavailable.");
+    expect(html).not.toMatch(/licen[sc]e|renew/i);
     expect(html).toContain("Sign in with your organization");
   });
 

@@ -3,7 +3,7 @@
 // walking up to ./node_modules.
 import { execFile, spawn } from "node:child_process";
 import assert from "node:assert/strict";
-import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
@@ -77,8 +77,6 @@ const fixtureEnv = {
   OMB_DATA_DIR: join(home, ".openmausbot"),
   OMB_PORT: String(port),
   OMB_WEBHOOK_PORT: String(webhookPort),
-  // Not a genuine key: enough to make the server look for its enterprise layer.
-  OMB_LICENSE_KEY: "omb1.not.real",
   ...(browserBundle ? {
     OMB_RESOURCES_PATH: staging,
     // A global engine on the developer's PATH must not make this test pass.
@@ -163,9 +161,6 @@ writeFileSync(
   ].join("\n"),
 );
 
-// The packaged tree carries the bundled enterprise layer inside the server
-// root, or a licensed install silently runs the open-source edition.
-const layerShipped = existsSync(join(staging, "server", "enterprise", "server", "index.js"));
 let editionReport = null;
 if (listening) {
   try {
@@ -408,8 +403,8 @@ if (searchReport?.status !== 200 || !Array.isArray(searchReport.body?.hits)) {
   process.exit(1);
 }
 
-if (layerShipped && (!editionReport || editionReport.error || String(editionReport.notice ?? "").includes("no enterprise layer exists"))) {
-  console.error("the packaged server ships an enterprise layer but did not find it:");
+if (editionReport?.edition !== "oss" || editionReport?.features?.length !== 0) {
+  console.error("the packaged server did not report the open-source edition:");
   console.error(JSON.stringify(editionReport, null, 2));
   process.exit(1);
 }
@@ -462,5 +457,5 @@ console.log("packaged openmausbot doctor and bots answered from the bundle ✓")
 console.log("packaged backup worker exported an encrypted archive ✓");
 if (launcherReport) console.log("packaged container launcher ran the server as its child and stopped it cleanly ✓");
 if (desktopEntryReport) console.log(`packaged desktop entry started the server twice on its compile cache (${desktopEntryReport.starts[0].cached.length} entries) ✓`);
-if (layerShipped) console.log("packaged server found its enterprise layer inside the server dir ✓");
+console.log("packaged server reports the open-source edition ✓");
 if (browserBundle) console.log(`packaged browser discovered without installation; access on by default ✓ ${JSON.stringify(browserReport)}`);

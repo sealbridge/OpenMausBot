@@ -1,11 +1,11 @@
 import { spawn, type ChildProcess } from "node:child_process";
-import { closeSync, mkdirSync, mkdtempSync, openSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { closeSync, openSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { launchVerificationServer, runControlOmb, verificationServerEnvironment, type VerificationServer } from "../scripts/control-omb.ts";
-import { removeTempDir, waitForExit } from "./testing/cleanup.ts";
+import { waitForExit } from "./testing/cleanup.ts";
+import { HOSTED_WORKSPACE_UNSUPPORTED } from "./workspace-policy.ts";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const TOKEN = `omb_workspace_${"s".repeat(43)}`;
@@ -25,7 +25,6 @@ type SavedBot = { id: string; threadId: string; name: string; modelSelection: Se
 
 let fixture: VerificationServer | undefined;
 let child: ChildProcess | undefined;
-let layer: string | undefined;
 let primary: SavedBot;
 let beforeTasks: SavedTask[];
 let history: Record<string, any>;
@@ -66,10 +65,8 @@ async function restart(grants: Grants) {
     env: {
       ...verificationServerEnvironment({}, owned.info.dataDir, Number(new URL(owned.info.url).port)),
       FAKE_CLAUDE_TEXT_DUMP: join(owned.info.dataDir, "fake-claude-helper-dump.json"),
-      OMB_ENTERPRISE_DIR: layer, OMB_LICENSE_KEY: "fixture-only",
       OMB_ADMIN_URL: "https://admin.example.test", OMB_ADMIN_WORKSPACE: "fixture",
       OMB_PUBLIC_URL: "https://fixture.example.test", OMB_ADMIN_MEMBERSHIP: "portal",
-      // This fixture drives the model policy over loopback; the hosted default (service trust) has its own test.
       OMB_LOOPBACK_TRUST: "owner",
       OMB_HOSTED_MODELS: JSON.stringify(grants), OMB_HOSTED_MODEL_TOKEN: TOKEN,
       OMB_HOSTED_CLAUDE_CLI: join(ROOT, "server/testing/fake-claude-cli.ts"),
@@ -111,17 +108,8 @@ async function expectCatalog(grants: Grants) {
 }
 
 beforeAll(async () => {
-  layer = mkdtempSync(join(tmpdir(), "omb-hosted-model-layer-"));
-  mkdirSync(join(layer, "server"));
-  writeFileSync(join(layer, "server/index.ts"), `
-    import { createWorkspaceAccess as create } from ${JSON.stringify(pathToFileURL(join(ROOT, "enterprise/server/workspace-access.ts")).href)};
-    export function register() { return { customer: "Hosted models fixture", features: ["admin"], expiresAt: null }; }
-    export function createWorkspaceAccess(options) {
-      return create({ ...options, fetchImpl: async () => { throw new Error("The model fixture must not contact a portal"); } });
-    }
-  `);
   fixture = await launchVerificationServer({}, undefined, undefined, undefined,
-    { dir: layer, licenseKey: "fixture-only" }, undefined, ["codex"]);
+    undefined, undefined, ["codex"]);
   child = fixture.child;
   primary = await create("Stale selections");
   const control = (args: string[]) => runControlOmb([...args, "--url", fixture!.info.url]);
@@ -144,11 +132,9 @@ beforeAll(async () => {
   }
   await create("Personal provider", { instanceId: "personal", model: "personal-model" });
 
-  // Seed a prior release's saved selections only after the owned server exits.
   await waitForExit(child, { signal: "SIGTERM" });
   const botsPath = join(fixture.info.dataDir, "bots.json");
   const saved = JSON.parse(readFileSync(botsPath, "utf8")) as SavedBot[];
-  // A prior release copied the bot's model onto every thread and had not run the one-time cleanup yet.
   rmSync(join(fixture.info.dataDir, "thread-model-copies-cleared"), { force: true });
   for (const bot of saved) for (const task of bot.tasks) {
     task.modelSelection ??= structuredClone(bot.modelSelection);
@@ -184,15 +170,16 @@ afterAll(async () => {
     console.info(JSON.stringify({ logPath: fixture.info.logPath, evidencePath }));
     await fixture.close();
   }
-  if (layer) await removeTempDir(layer);
 });
 
 describe("hosted model policy in the full runtime", () => {
   it("advertises only assignments and reconciles saved choices without changing conversation history", async () => {
     await expectCatalog(INITIAL);
     const health = await api("GET", "/api/health/hosted");
-    expect(health.status).toBe(200);
-    expect(health.headers.get("x-omb-hosted-model-policy")).toBe("1");
+    expect(health.status).toBe(503);
+    expect(health.headers.get("x-omb-hosted-model-policy")).toBeNull();
+    expect(health.body).toEqual({ error: HOSTED_WORKSPACE_UNSUPPORTED });
+    expect((await api("GET", "/api/edition")).body).toEqual({ edition: "oss", features: [] });
     const current = await bots();
     const stale = current.find((bot) => bot.id === primary.id)!;
     expect(stale.modelSelection).toEqual({ instanceId: "claude", model: INITIAL.anthropic[0] });
@@ -344,7 +331,6 @@ describe("hosted model policy in the full runtime", () => {
     }
     expect((await api("GET", `/api/threads/${primary.threadId}/messages?limit=50`)).body).toEqual(history);
     const first = await bots();
-    // A later managed session must survive an unchanged policy restart.
     await waitForExit(child, { signal: "SIGTERM" });
     const botsPath = join(fixture!.info.dataDir, "bots.json");
     const persisted = JSON.parse(readFileSync(botsPath, "utf8")) as SavedBot[];
@@ -376,3 +362,20 @@ describe("hosted model policy in the full runtime", () => {
     expect((await api("GET", `/api/threads/${primary.threadId}/messages?limit=50`)).body).toEqual(history);
   }, 30_000);
 });
+
+it("keeps the normal local provider settings editable", async () => {
+  const fixture = await launchVerificationServer();
+  try {
+    const response = await fetch(`${fixture.info.url}/api/config`);
+    expect(response.status).toBe(200);
+    const config = await response.json() as { edition: unknown };
+    expect(config.edition).toEqual({ edition: "oss", features: [] });
+    const settings = { openaiCompat: { url: "http://127.0.0.1:9/v1", model: "fixture-local-model" } };
+    const update = await fetch(`${fixture.info.url}/api/config`, {
+      method: "PUT", headers: { "content-type": "application/json", origin: fixture.info.url },
+      body: JSON.stringify(settings),
+    });
+    expect(update.status).toBe(200);
+    expect(JSON.parse(readFileSync(join(fixture.info.dataDir, "config.json"), "utf8"))).toMatchObject(settings);
+  } finally { console.info(JSON.stringify(fixture.info)); await fixture.close(); }
+}, 60_000);

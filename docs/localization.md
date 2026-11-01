@@ -29,8 +29,8 @@ English each translation was made from. A pull request does not edit it:
 - a removed key's hash is left in place and ignored;
 - a key whose recorded hash no longer matches today's English fails the check.
 
-The release bump (`prepare-release.yml`) runs
-`node scripts/generate-locale.mjs --record-hashes` and commits the file with
+Before preparing a future release, run
+`node scripts/generate-locale.mjs --record-hashes` and commit the file with
 the bump. For every translated key without a hash it records the hash of the
 English the translation was written against: `git blame` finds the commit that
 last changed the translated value, and the hash is of `en.json`'s text for

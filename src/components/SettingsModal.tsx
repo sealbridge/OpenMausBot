@@ -39,7 +39,6 @@ import { Card, SettingsGroup, SIMPLE_BUTTONS } from "./SettingsPrimitives";
 import { shortcutLabel } from "./ShortcutHint";
 import { UsageSection } from "./UsageSection";
 import { SkillsSection } from "./SkillsSection";
-import { LicenseExpiryBanner } from "./LicenseExpiryBanner";
 import { WorkspacesSection, workspacesAvailable } from "./WorkspacesSection";
 import { SkinPicker } from "./SkinPicker";
 import { ThemeRow } from "./ThemeRow";
@@ -557,7 +556,6 @@ export function SettingsModal() {
                 "[&_.uppercase]:normal-case [&_.uppercase]:tracking-normal",
               )}
             >
-              <LicenseExpiryBanner config={state.config} />
               {currentPage ? renderSimplePage(currentPage) : null}
             </div>
           </div>
@@ -662,7 +660,6 @@ export function SettingsModal() {
           </div>
 
           <div ref={scrollRef} className="flex flex-1 flex-col gap-4 overflow-y-auto px-3 py-4 sm:px-5 sm:pb-5">
-            <LicenseExpiryBanner config={state.config} />
             {renderSection(section)}
           </div>
         </div>

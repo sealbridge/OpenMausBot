@@ -4,7 +4,6 @@ import { activeLocale, t } from "@/lib/i18n";
 import { Card } from "./SettingsPrimitives";
 import { CompanyModels } from "./CompanyModels";
 
-const providerNames: Record<string, string> = { anthropic: "Anthropic", openai: "OpenAI", openrouter: "OpenRouter" };
 const DEFAULT_PORTAL_ORIGIN = "https://admin.openmausbot.com";
 
 /** Security: only the trusted desktop bridge can enroll this computer or hold its token. */
@@ -71,7 +70,7 @@ export function OrganizationSettings() {
 
   if (!bridge) return <p className="text-[13px] text-ink-secondary">{t("organization.desktopOnly")}</p>;
   const enrolled = connection?.status === "connected" || connection?.status === "reauth-required" || connection?.status === "unavailable" || connection?.status === "license-expired";
-  const licenseExpired = connection?.status === "license-expired" || connection?.notice === "license-expired";
+  const accessUnavailable = connection?.status === "license-expired" || connection?.notice === "license-expired";
   const expiry = connection?.enrollment?.expiresAt ?? connection?.expiresAt;
   const date = typeof expiry === "number" && Number.isFinite(expiry) ? new Date(expiry) : null;
   const dateLabel = date && Number.isFinite(date.getTime())
@@ -81,7 +80,7 @@ export function OrganizationSettings() {
     <Card title={t("settings.section.organization")} subtitle={t("organization.privacy")}>
       {!connection && <p role="status" className="text-[13px] text-ink-secondary">{error || t("organization.loading")}</p>}
       {connection?.message && <p role="status" className="mb-3 text-[13px] text-ink-secondary">{connection.message}</p>}
-      {licenseExpired && <p role="alert" className="mb-3 text-[13px] text-ink">{t("organization.licenseExpired")}</p>}
+      {accessUnavailable && <p role="alert" className="mb-3 text-[13px] text-ink">{t("organization.unavailable")}</p>}
       {connection?.status === "signed-out" && <div className="flex flex-col gap-3">
         <p className="text-[13px] text-ink-secondary">{t("organization.signInHelp")}</p>
         <button type="button" disabled={busy} onClick={() => void perform(() => bridge.begin({ portalOrigin: DEFAULT_PORTAL_ORIGIN }))}
@@ -118,12 +117,7 @@ export function OrganizationSettings() {
       {enrolled && <div className="flex flex-col gap-3">
         <div>{connection.branding?.logo && <img src={connection.branding.logo} alt="Organization logo" className="mb-2 size-12 rounded-lg object-contain" />}<div className="break-words text-[15px] font-medium text-ink">{connection.organization?.name}</div>
           <div className="break-all text-[13px] text-ink-secondary">{connection.email}</div></div>
-        {connection.status === "reauth-required" ? <p role="alert" className="text-[13px] text-ink-secondary">{t("organization.reauth")}</p> : connection.status === "license-expired" ? <>
-          {connection.providers?.some((provider) => provider.configured && provider.models.length > 0) && <ul className="divide-y divide-hairline/40">{connection.providers.filter((provider) => provider.configured && provider.models.length > 0).map((provider) => <li key={provider.id} className="flex flex-wrap justify-between gap-2 py-2 text-[13px]">
-            <span className="text-ink">{providerNames[provider.id] ?? provider.id}</span>
-            <span className="text-ink-secondary">{t("organization.companyModelsUnavailable")}</span>
-          </li>)}</ul>}
-        </> : connection.status === "connected" ? <>
+        {connection.status === "reauth-required" ? <p role="alert" className="text-[13px] text-ink-secondary">{t("organization.reauth")}</p> : connection.status === "connected" ? <>
           <p className="text-[13px] text-ink-secondary">{t("organization.modelHelp")}</p>
           {connection.providers?.some((provider) => provider.configured && provider.models.length > 0) ?
             <CompanyModels providers={connection.providers} /> : <p className="text-[13px] text-ink-secondary">{t("organization.noModels")}</p>}

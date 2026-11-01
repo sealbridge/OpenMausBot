@@ -9,7 +9,7 @@ import type { IncomingMessage } from "node:http";
 import { join } from "node:path";
 import type { Surface } from "../shared/wire.ts";
 import { writeFileAtomic } from "./atomic.ts";
-import { hostedWorkspaceConfigured } from "./enterprise.ts";
+import { hostedWorkspaceConfigured } from "./workspace-policy.ts";
 import { parseMemberClaim, teamRoleScopes, type CloudTeam } from "./cloud-team.ts";
 import { formatPairingCode, type SessionRegistry } from "./sessions.ts";
 
