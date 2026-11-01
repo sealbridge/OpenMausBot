@@ -171,3 +171,21 @@ Added files:
 - `server/workspace-policy.ts` and `server/workspace-policy.test.ts`
 - `scripts/check-fork-boundaries.mjs` and `scripts/check-fork-boundaries.test.mjs`
 - `docs/sealbridge/upstream-sync.md`
+
+## Upstream synchronization rehearsal
+
+Integrated upstream snapshot `1f1e8f452aefc6e3c499a697de7fde10f05e3621`
+over fork base `2ba2aa25e2c10b68c8e76b2688e8f737034f8459`.
+The following upstream files retain fork modifications alongside upstream updates:
+
+- `.github/workflows/release.yml`: retain the disabled release guard; omit the
+  upstream release build change.
+- `package.json`: adopt version `0.1.137` while retaining product identity.
+- `scripts/ci-scope.mjs`: adopt locale test selection while retaining the OSS scope.
+- `server/index.ts`: adopt cloud-move language and notification membership wiring
+  while retaining the OSS edition and workspace boundaries.
+- `src/locales/en.json` and `src/locales/ko.json`: adopt upstream catalog changes
+  while retaining the fork's catalog changes.
+
+Other upstream updates retain upstream attribution. The enterprise layer, CLA
+procedure and deleted publishing workflows remain excluded.
