@@ -1,0 +1,13 @@
+{
+  "productName": "Sealbridge Desktop",
+  "packageName": "sealbridge-desktop",
+  "desktopName": "sealbridge-desktop.desktop",
+  "executableName": "sealbridge-desktop",
+  "shortName": "Sealbridge",
+  "appId": "dev.sealbridge.desktop",
+  "urlScheme": "sealbridge",
+  "dataDirName": "sealbridge-desktop",
+  "cliPackage": "sealbridge",
+  "cliVersion": "0.2.2",
+  "defaultRelay": "https://relay.sealbridge.dev"
+}

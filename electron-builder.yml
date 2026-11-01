@@ -1,5 +1,5 @@
-appId: com.openmausbot.app
-productName: OpenMausBot
+appId: dev.sealbridge.desktop
+productName: Sealbridge Desktop
 artifactName: OpenMausBot-${version}-${arch}.${ext}
 
 protocols:
@@ -46,6 +46,7 @@ files:
   - "!electron/resources/OpenMausBot Recorder.app/**"
   - "!**/node_modules/**"
   - package.json
+  - branding/product.json
 
 asar: true
 
@@ -191,7 +192,7 @@ win:
 nsis:
   oneClick: true
   perMachine: false
-  shortcutName: OpenMausBot
+  shortcutName: ${productName}
   # Versioned, like the .dmg. The README's /latest/download/ button needs a
   # STABLE filename, so ship a second copy named OpenMausBot-setup.exe on the
   # release — the same trick as OpenMausBot.dmg beside OpenMausBot-${version}.dmg.
@@ -207,7 +208,7 @@ linux:
   # lone 1024px PNG is not indexed by GNOME's hicolor theme on Ubuntu 24.04.
   icon: build/icon.svg
   category: Utility
-  executableName: openmausbot
+  executableName: sealbridge-desktop
   synopsis: Your own team of AI bots, in a chat app
   description: A local-first chat app for running a team of AI agents.
   maintainer: Milind Soni <46266943+milind-soni@users.noreply.github.com>
@@ -228,7 +229,7 @@ linux:
       to: openmausbot-browser.apparmor
   desktop:
     entry:
-      Name: OpenMausBot
+      Name: Sealbridge Desktop
       Comment: Your own team of AI bots, in a chat app
       Keywords: AI;Agents;Chat;Productivity;
 

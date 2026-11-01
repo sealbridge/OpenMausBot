@@ -1,0 +1,39 @@
+{
+  "initialize": {
+    "protocolVersion": "2024-11-05",
+    "capabilities": {
+      "tools": {
+        "listChanged": false
+      }
+    },
+    "serverInfo": {
+      "name": "sealbridge-mcp-server",
+      "version": "0.2.2"
+    }
+  },
+  "catalog": {
+    "tools": [
+      {
+        "name": "acp_delegate_task"
+      },
+      {
+        "name": "acp_delegate_multi"
+      },
+      {
+        "name": "acp_verify_audit_bundle"
+      },
+      {
+        "name": "acp_create_invite"
+      },
+      {
+        "name": "acp_revoke_token"
+      },
+      {
+        "name": "acp_discover_workers"
+      },
+      {
+        "name": "acp_inspect_revocations"
+      }
+    ]
+  }
+}

@@ -2,6 +2,7 @@
 // the path the user launches, using the shipped bundle. Runs under Electron
 // (electron-updater needs its net stack):
 //   xvfb-run -a pnpm exec electron scripts/smoke-linux-update.mjs
+import { product } from "../electron/sealbridge/product.mjs";
 import { createHash } from "node:crypto";
 import {
   copyFileSync,
@@ -59,10 +60,10 @@ async function main() {
   // The bug shape: a version in the filename, and a launcher pinned to it.
   const launched = path.join(installDir, "OpenMausBot-0.0.1-x86_64.AppImage");
   copyFileSync(packaged, launched);
-  const desktopEntry = path.join(applications, "com.openmausbot.app.desktop");
+  const desktopEntry = path.join(applications, product.desktopName);
   writeFileSync(
     desktopEntry,
-    `[Desktop Entry]\nName=OpenMausBot\nExec=${launched} %U\nType=Application\n`,
+    `[Desktop Entry]\nName=${product.productName}\nExec=${launched} %U\nType=Application\n`,
   );
 
   // Isolate every path the updater writes to.

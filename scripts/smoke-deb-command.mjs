@@ -5,6 +5,7 @@
 //   node scripts/smoke-deb-command.mjs <path-to-deb>
 //
 // Needs a container runtime.
+import { product } from "../electron/sealbridge/product.mjs";
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
@@ -25,7 +26,7 @@ if (!deb.endsWith(".deb") || !existsSync(deb)) fail("pass the path to a .deb");
 
 // Inside the container the package sits at a path with a space and an
 // apostrophe, so the quoting the app emits is exercised, not assumed.
-const staged = "/root/pending dir/o'brien/OpenMausBot.deb";
+const staged = `/root/pending dir/o'brien/${product.packageName}.deb`;
 const command = packageInstallCommand("deb", staged);
 console.log(`[smoke-deb-command] command under test:\n    ${command}\n`);
 
@@ -67,8 +68,8 @@ const installed = inContainer(
   [
     prepare,
     command,
-    'dpkg-query -W -f="INSTALLED=\\${Version} \\${db:Status-Abbrev}\\n" openmausbot',
-    'test -x /opt/OpenMausBot/openmausbot && echo "EXECUTABLE=yes"',
+    'dpkg-query -W -f="INSTALLED=\\${Version} \\${db:Status-Abbrev}\\n" ' + product.packageName,
+    `test -x "/opt/${product.executableName}/${product.executableName}" && echo "EXECUTABLE=yes"`,
   ].join("\n"),
 );
 
