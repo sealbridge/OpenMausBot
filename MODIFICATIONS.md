@@ -39,7 +39,7 @@ Upstream files modified by this change:
   macOS/Linux Sentinel CLI discovery, including the bundled server build
 - .github/workflows/ci.yml, package-linux.yml, package-win.yml and release.yml:
   derive installed/built app paths and package cleanup names; preserve artifact
-  names, updater destinations and publishing behavior
+  names and updater destinations; G1 disables public release publishing
 - Existing product consistency, installer, after-pack, login and service tests:
   cover the current paths, quoted attachment and generated desktop entry
 
@@ -93,6 +93,7 @@ Modified upstream files (including fork files extended in G1):
 - `scripts/ci-workflow.test.ts`
 - `scripts/control-omb.ts`
 - `scripts/docker-image.test.ts`
+- `scripts/packaged-native-modules.test.mjs`
 - `scripts/smoke-packaged-server.mjs`
 - `scripts/testing/verification-docs.test.ts`
 - `scripts/testing/vitest-shard-weights.json`
@@ -171,3 +172,28 @@ Added files:
 - `server/workspace-policy.ts` and `server/workspace-policy.test.ts`
 - `scripts/check-fork-boundaries.mjs` and `scripts/check-fork-boundaries.test.mjs`
 - `docs/sealbridge/upstream-sync.md`
+
+## Upstream synchronization rehearsal
+
+Integrated upstream snapshot `1f1e8f452aefc6e3c499a697de7fde10f05e3621`
+over fork base `2ba2aa25e2c10b68c8e76b2688e8f737034f8459`.
+The following upstream files retain fork modifications alongside upstream updates:
+
+- `.github/workflows/release.yml`: retain the disabled release guard; omit the
+  upstream release build change.
+- `package.json`: adopt version `0.1.137` while retaining product identity.
+- `scripts/ci-scope.mjs`: adopt locale test selection while retaining the OSS scope.
+- `server/index.ts`: adopt cloud-move language and notification membership wiring
+  while retaining the OSS edition and workspace boundaries.
+- `src/locales/en.json` and `src/locales/ko.json`: adopt upstream catalog changes
+  while retaining the fork's catalog changes.
+
+Other upstream updates retain upstream attribution. The enterprise layer, CLA
+procedure and deleted publishing workflows remain excluded.
+
+The rehearsal branch also incorporates fork main `ca04b6c6d`, retaining its
+sync procedure and rehearsal log, the explicit local-provider persistence
+fixture in `server/hosted-models-api.test.ts`, and the boundary-checker copy in
+`scripts/packaged-native-modules.test.mjs`. The sync covers
+`88d54eb17..1f1e8f452` (22 changes taken; release-only change `43d3a84d1`
+skipped). Newer upstream commits are left for the next sync.
