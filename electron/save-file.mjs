@@ -1,3 +1,4 @@
+import { product } from "./sealbridge/product.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
@@ -52,7 +53,7 @@ function isSameFile(left, right) {
 async function resolveSource(rawPath, { home, fsp, platform }) {
   const target = normalizeSourcePath(rawPath);
   const root = await canonicalPath(
-    path.join(home, ".openmausbot"),
+    path.join(home, `.${product.dataDirName}`),
     fsp,
     "Only files created by your bots can be saved",
   );

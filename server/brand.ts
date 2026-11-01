@@ -1,3 +1,4 @@
+import product from "../branding/product.json" with { type: "json" };
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
@@ -35,7 +36,7 @@ export const brandSchema = z
 
 export type Brand = z.infer<typeof brandSchema>;
 
-export const DEFAULT_BRAND: Brand = { name: "OpenMausBot" };
+export const DEFAULT_BRAND: Brand = { name: product.productName };
 
 export interface BrandStatus {
   brand: Brand;

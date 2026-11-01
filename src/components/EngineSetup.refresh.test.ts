@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import product from "../../branding/product.json";
 import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -87,6 +88,6 @@ it("says plainly when the engine now runs the copy the app installed", async () 
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ instances: [ready], usingAppCopy: true }))));
   mount(createElement(EngineSetup, { instance: opencode }));
   await act(async () => button("Install OpenCode here").click());
-  expect(host.textContent).toContain("Another copy of OpenCode on this computer doesn't start, so OpenCode now uses the copy MausBot installed.");
+  expect(host.textContent).toContain(`Another copy of OpenCode on this computer doesn't start, so OpenCode now uses the copy ${product.productName} installed.`);
   expect(host.textContent).toContain("Installation verified");
 });

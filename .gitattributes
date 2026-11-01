@@ -39,3 +39,12 @@ shared/app-frame/app-host.html text eol=lf
 
 # Imported by a vitest test: a CRLF checkout of its first lines broke the import on Windows.
 scripts/tighten-ratchets.mjs text eol=lf
+
+branding/icons/icon.svg text eol=lf
+public/app-icon.svg text eol=lf
+build/icon.svg text eol=lf
+package.json text eol=lf
+public/manifest.webmanifest text eol=lf
+electron-builder.yml text eol=lf
+index.html text eol=lf
+electron/resources/speech-helper-Info.plist text eol=lf

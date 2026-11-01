@@ -1,5 +1,6 @@
 // Files end to end: the full server as a Cloud home over its real HTTP boundary, and the desktop's Files service
 // driving it, with the owner's pairing token standing in for the desktop window's Cloud cookie. No network.
+import product from "../branding/product.json" with { type: "json" };
 import { randomBytes } from "node:crypto";
 import { spawn, type ChildProcess } from "node:child_process";
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
@@ -55,7 +56,7 @@ async function ownerPairing(): Promise<string> {
 
 beforeAll(async () => {
   home = mkdtempSync(join(tmpdir(), "omb-cloud-sync-e2e-"));
-  const dataDir = join(home, ".openmausbot");
+  const dataDir = join(home, `.${product.dataDirName}`);
   mkdirSync(dataDir, { recursive: true });
   const cli = join(home, "fixture-claude.mjs");
   writeFileSync(cli, `#!/usr/bin/env node
@@ -112,7 +113,7 @@ const desktopFetch = (url: string, init: RequestInit & { headers?: Record<string
 function desktop(pcHome: string) {
   return createCloudFilesService({
     settingsFile: join(pcHome, "user", "settings.json"), stateFile: join(pcHome, "user", "state.db"),
-    documentsDir: join(pcHome, "Documents"), localDataDir: join(pcHome, ".openmausbot"), homeDir: pcHome, platform: process.platform, hostname: "Ash-PC",
+    documentsDir: join(pcHome, "Documents"), localDataDir: join(pcHome, `.${product.dataDirName}`), homeDir: pcHome, platform: process.platform, hostname: "Ash-PC",
     cloudOrigin: () => PC_ORIGIN, fetch: desktopFetch as typeof fetch, trashItem: async (file: string) => rmSync(file), markDownloaded: async () => {},
     watch: () => () => {}, now: () => Date.now() + 60_000,
   });
@@ -169,7 +170,7 @@ it("a bot's turn wakes the desktop, and its new work comes down to Documents/Mau
   const service = desktop(pcHome);
   try {
     await service.pass();
-    const output = join(home, ".openmausbot", "task-workspaces", bot.id, bot.threadId);
+    const output = join(home, `.${product.dataDirName}`, "task-workspaces", bot.id, bot.threadId);
     mkdirSync(output, { recursive: true });
     writeFileSync(join(output, "report.md"), "# Q3");
     const later = new Date(Date.now() + 120_000);
@@ -181,7 +182,7 @@ it("a bot's turn wakes the desktop, and its new work comes down to Documents/Mau
     expect((await api("POST", `/api/bots/${bot.id}/messages`, { body: { text: "write the report" } })).status).toBe(202);
     expect((await woken).folderIds).toContain(`bot-${bot.id}-${bot.threadId}`);
     await service.pass();
-    const owl = join(pcHome, "Documents", "MausBot", "Report Owl");
+    const owl = join(pcHome, "Documents", product.productName, "Report Owl");
     const [conversation] = readdirSync(owl);
     expect(readFileSync(join(owl, conversation!, "report.md"), "utf8")).toBe("# Q3");
   } finally {

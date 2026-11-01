@@ -1,3 +1,4 @@
+import product from "../../branding/product.json";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -258,7 +259,7 @@ describe("Settings → Engines → setup cards", () => {
 
     vi.stubGlobal("window", { ogb: { remoteClient: { active: true } } });
     const remote = renderToStaticMarkup(createElement(EnginesSettings));
-    expect(remote).toContain("open Settings → API keys on the computer running MausBot");
+    expect(remote).toContain(`open Settings → API keys on the computer running ${product.productName}`);
     expect(remote).not.toContain("data-key-row");
 
     vi.stubGlobal("window", {});

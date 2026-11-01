@@ -50,6 +50,11 @@ function onlyAppImage() {
 }
 
 async function main() {
+  if (product.updateChannel === "disabled") {
+    console.log("[smoke-linux-update] skipped: desktop updates are disabled");
+    app.exit(0);
+    return;
+  }
   const packaged = onlyAppImage();
   const workspace = mkdtempSync(path.join(tmpdir(), "omb-update-smoke-"));
   const installDir = path.join(workspace, "opt");

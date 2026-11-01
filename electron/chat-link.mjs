@@ -1,6 +1,7 @@
-// openmausbot://thread/<thread-id>?bot=<bot-id> and openmausbot://bot/<bot-id>. The page checks them strictly against
+import { product } from "./sealbridge/product.mjs";
+// The page checks thread and bot links strictly against
 // its chats; opening one never sends, interrupts or creates anything.
-const CHAT_LINK_PREFIXES = ["openmausbot://thread/", "openmausbot://bot/"];
+const CHAT_LINK_PREFIXES = [`${product.urlScheme}://thread/`, `${product.urlScheme}://bot/`];
 const MAX_LINK_LENGTH = 1024;
 
 export function chatLinkFrom(value) {

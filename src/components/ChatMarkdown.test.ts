@@ -552,14 +552,14 @@ describe("#Title thread links in markdown", () => {
   });
 
   it("renders a sent canonical link as a chip that opens the thread", () => {
-    const markup = render("done in [QA PR 245](openmausbot://thread/qa-245?bot=scout) today");
+    const markup = render("done in [QA PR 245](sealbridge://thread/qa-245?bot=scout) today");
     expect(markup).toContain('<button type="button" data-thread-link="qa-245"');
     expect(markup).toContain(">QA PR 245</button>");
     expect(markup).not.toContain('href="openmausbot://');
   });
 
   it("keeps a dead thread link as plain text, never an external anchor", () => {
-    const markup = render("see [Gone](openmausbot://thread/dead?bot=scout)");
+    const markup = render("see [Gone](sealbridge://thread/dead?bot=scout)");
     expect(markup).toContain(">Gone<");
     expect(markup).not.toContain("data-thread-link");
     expect(markup).not.toContain('href="openmausbot://');
@@ -568,7 +568,7 @@ describe("#Title thread links in markdown", () => {
 });
 
 describe("a Use my Mac link in an older bot message", () => {
-  const text = "To let me use your apps, press [Use my Mac](openmausbot://use-my-computer).";
+  const text = "To let me use your apps, press [Use my Mac](sealbridge://use-my-computer).";
 
   it("is plain text everywhere, even in this app with an older Cloud's bridge: this computer is lent by itself", () => {
     const offer = vi.fn(async () => {});
@@ -582,7 +582,7 @@ describe("a Use my Mac link in an older bot message", () => {
     } finally {
       delete window.ogb;
     }
-    expect(chatUrlTransform("openmausbot://use-my-computer")).toBe("openmausbot://use-my-computer");
+    expect(chatUrlTransform("sealbridge://use-my-computer")).toBe("sealbridge://use-my-computer");
   });
 });
 

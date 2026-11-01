@@ -1,6 +1,7 @@
 // macOS auto-update requires a signed app, so this runs only when packaged. electron-updater is vendored
 // because the packaged app ships no node_modules.
 import { app, clipboard, ipcMain } from "electron";
+import { product } from "./sealbridge/product.mjs";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
@@ -19,6 +20,8 @@ import { createQuietInstall, installFailed, launchAfter, LOOK_EVERY_MS, updateSe
 export { quietSignals } from "./update-when-quiet-main.mjs";
 
 const require = createRequire(import.meta.url);
+
+export const productUpdatesEnabled = () => product.updateChannel !== "disabled";
 
 let autoUpdater = null;
 let win = null;
@@ -45,7 +48,7 @@ function quietRecord() {
 }
 
 function launched() {
-  launch ??= app.isPackaged && QUIET_PLATFORMS.has(process.platform)
+  launch ??= productUpdatesEnabled() && app.isPackaged && QUIET_PLATFORMS.has(process.platform)
     ? launchAfter(quietRecord(), { version: app.getVersion() })
     : { hidden: false, updated: null };
   return launch;
@@ -146,7 +149,7 @@ export function attachUpdaterWindow(mainWindow) {
 
 /** `signals` (quietSignals): what tells a quiet moment; without them a downloaded update installs only on Restart or quit. */
 export function startUpdater(signals = null) {
-  if (!app.isPackaged) {
+  if (!productUpdatesEnabled() || !app.isPackaged) {
     updaterCoordinator = null;
     setState({ status: "idle" });
     return;

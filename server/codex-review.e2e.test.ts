@@ -1,3 +1,4 @@
+import product from "../branding/product.json" with { type: "json" };
 import { spawn, type ChildProcess } from "node:child_process";
 import { chmodSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -40,8 +41,8 @@ const start = async () => {
 beforeAll(async () => {
   chmodSync(fake, 0o755);
   home = mkdtempSync(join(tmpdir(), "omb-codex-review-"));
-  mkdirSync(join(home, ".openmausbot"));
-  writeFileSync(join(home, ".openmausbot", "config.json"), JSON.stringify({ instances: {
+  mkdirSync(join(home, `.${product.dataDirName}`));
+  writeFileSync(join(home, `.${product.dataDirName}`, "config.json"), JSON.stringify({ instances: {
     codex: { driver: "codex", environment: {
       FAKE_CODEX_MODE: "review-events",
       FAKE_CODEX_DUMP: join(home, "codex-dump.json"),

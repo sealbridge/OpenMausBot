@@ -1,3 +1,4 @@
+import product from "../branding/product.json" with { type: "json" };
 import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -39,7 +40,7 @@ const taskTitle = async (botId: string, threadId: string): Promise<string | unde
 
 beforeAll(async () => {
   home = mkdtempSync(join(tmpdir(), "omb-regenerate-title-"));
-  const data = join(home, ".openmausbot");
+  const data = join(home, `.${product.dataDirName}`);
   const staticDir = join(home, "static");
   mkdirSync(data, { recursive: true });
   mkdirSync(join(staticDir, "assets"), { recursive: true });

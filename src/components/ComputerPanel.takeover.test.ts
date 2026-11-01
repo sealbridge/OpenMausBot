@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 // Take control where the person watches: the real panel, its real control requests, a stand-in for the live desktop.
+import product from "../../branding/product.json";
 import { createElement } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
@@ -266,7 +267,7 @@ describe("taking control of a Local VM", () => {
     await settle();
     expect(releases()).toHaveLength(1);
     expect(liveDesktop()).toBeNull();
-    expect(document.body.textContent).toContain("MausBot couldn't open the live desktop. Try again.");
+    expect(document.body.textContent).toContain(`${product.productName} couldn't open the live desktop. Try again.`);
   });
 });
 

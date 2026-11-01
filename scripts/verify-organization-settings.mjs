@@ -10,6 +10,7 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { product } from "../electron/sealbridge/product.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const flag = "--omb-organization-fixture";
@@ -197,7 +198,7 @@ if (process.versions.electron && process.argv.includes(flag)) {
     const beginsBeforeApp = begins;
     win.setSize(1180, 850);
     await win.loadURL(`${url}?app=1`);
-    await until(() => evaluate("document.body.textContent.includes('Meet OpenMausBot')"), "normal optional welcome flow");
+    await until(() => evaluate(`document.body.textContent.includes(${JSON.stringify(`Meet ${product.productName}`)})`), "normal optional welcome flow");
     assert.equal(await evaluate(`Boolean(${button("Sign in with your organization")})`), false);
     assert.equal(begins, beginsBeforeApp);
     win.webContents.send("app:open-settings");
@@ -254,7 +255,7 @@ if (process.versions.electron && process.argv.includes(flag)) {
     const previousWindow = win;
     win = await open(true, activeEnvironment(readEnvironments())?.origin ?? `${url}?app=1`);
     previousWindow.destroy();
-    await until(() => evaluate("document.body.textContent.includes('Meet OpenMausBot')"), "local choice survives recreated renderer");
+    await until(() => evaluate(`document.body.textContent.includes(${JSON.stringify(`Meet ${product.productName}`)})`), "local choice survives recreated renderer");
     assert.equal(await evaluate("typeof window.ogb.organization"), "object");
     assert.equal(new URL(win.webContents.getURL()).origin, localOrigin);
     // Simulate the already-confirmed companion disconnect's one-bit restart

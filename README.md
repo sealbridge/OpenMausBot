@@ -16,6 +16,9 @@ the desktop UI; delegation through Sealbridge is not yet available in the app.
 Some interface text and visual assets still use upstream branding. See the
 [integration contracts and current limitations](docs/sealbridge/g0-contracts.md).
 
+Identity, dedicated storage paths, disabled updates and placeholder icon replacement
+are documented in [branding/README.md](branding/README.md).
+
 ## Build from source
 
 Requirements: Node.js **24 or newer** and **pnpm 10.33.0**, as specified in

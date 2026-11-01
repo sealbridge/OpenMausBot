@@ -106,7 +106,7 @@ secure_browser_tree() {
 }
 
 install_browser_apparmor_profile() {
-  profile=$APP_ROOT/resources/openmausbot-browser.apparmor
+  profile=$APP_ROOT/resources/sealbridge-desktop-browser.apparmor
   if [ -L "$profile" ] || [ ! -f "$profile" ] || [ "$(stat -c '%h' -- "$profile")" != 1 ]; then
     echo "Sealbridge Desktop browser AppArmor profile is missing or unsafe: $profile" >&2
     exit 1
@@ -150,7 +150,7 @@ install_browser_apparmor_profile() {
     echo "Sealbridge Desktop AppArmor policy directory is unsafe: $APPARMOR_DIR" >&2
     exit 1
   fi
-  target=$APPARMOR_DIR/openmausbot-browser
+  target=$APPARMOR_DIR/sealbridge-desktop-browser
   if [ -L "$target" ] || { [ -e "$target" ] && [ ! -f "$target" ]; }; then
     echo "Sealbridge Desktop AppArmor profile target is unsafe: $target" >&2
     exit 1

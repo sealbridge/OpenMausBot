@@ -1,7 +1,6 @@
 /** Made with Blob Studio. */
 import React, { useEffect, useId, useMemo, useRef } from 'react'
 
-import { MASCOT_BODIES } from "../../shared/mascot-bodies"
 import {
   EXPRESSIONS,
   EXPRESSION_COUNT,
@@ -42,8 +41,8 @@ export interface CursorSilhouette {
   anchor: { x: number; y: number; scale: number }
 }
 
-const { id: _cursorBodyId, ...cursorSilhouette } = MASCOT_BODIES.cursor;
-export const DEFAULT_SILHOUETTE: CursorSilhouette = cursorSilhouette;
+export { DEFAULT_SILHOUETTE } from "./avatar-placeholder";
+import { DEFAULT_SILHOUETTE as silhouette } from "./avatar-placeholder";
 
 export const DEFAULT_GRADIENT: [string, string, string] = ["#9FE6B5","#3FAE6E","#1C7A4C"]
 
@@ -936,7 +935,6 @@ export const CursorAvatar = React.forwardRef<CursorAvatarHandle, CursorAvatarPro
       autoBlink = true,
       autoExpression = true,
       paused = false,
-      silhouette = DEFAULT_SILHOUETTE,
       gradient = DEFAULT_GRADIENT, picture,
       eyeColor = "#ffffff",
       title,

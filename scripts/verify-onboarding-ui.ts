@@ -1,3 +1,4 @@
+import { product } from "../electron/sealbridge/product.mjs";
 // Assert the first-run workflow against a handle from `control-omb ui launch`.
 // The handle gate refuses live-app URLs and stopped fixtures. All profile,
 // bot and onboarding writes below stay inside that launch's disposable home.
@@ -65,7 +66,7 @@ await evaluate("fetch('/api/config', {method:'PUT', headers:{'Content-Type':'app
 await evaluate("fetch('/api/bots').then(r => r.json()).then(data => Promise.all(data.bots.filter(bot => bot.defaultBot).map(bot => fetch('/api/bots/' + bot.id, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({welcomed:false})}).then(r => r.ok)))).then(oks => oks.length > 0 && oks.every(Boolean))");
 // A new install opens in Simple mode; this page's own writes after the clear would otherwise read as an earlier run.
 await evaluate("localStorage.clear(); sessionStorage.clear(); localStorage.setItem('omb-advanced-mode', '0'); setTimeout(() => { location.search = '?onboarding=1'; }, 0); true");
-await textVisible("Meet OpenMausBot");
+await textVisible(`Meet ${product.productName}`);
 await evaluate("document.documentElement.dataset.reducedMotion = 'true'; true");
 await screenshot("welcome");
 // Two screens, no form: the first asks nothing and shows no steps, Back or Skip.
@@ -117,7 +118,7 @@ assert.equal(starter.modelSelection.model, selected.models.default);
 // and this time it is saved.
 // MausBot has met the person by now, so the Chief step is not shown again: Next lands in the Chief's chat.
 await evaluate("localStorage.removeItem('omb-email-gate'); setTimeout(() => location.reload(), 0); true");
-await textVisible("Meet OpenMausBot");
+await textVisible(`Meet ${product.productName}`);
 await click("Next");
 await poll(() => evaluate("document.querySelectorAll('[data-welcome]').length"), 0, "Next lands in the chat");
 await textVisible(composer);
@@ -169,7 +170,7 @@ console.log("PASS Settings replay and Skip queued behind slow Next");
 
 await openSettings();
 await click("Replay welcome tour");
-await textVisible("Meet OpenMausBot");
+await textVisible(`Meet ${product.productName}`);
 await holdConfigWrite();
 await click("Next");
 await poll(() => evaluate("document.querySelectorAll('[data-welcome]').length"), 0, "slow completion cannot trap welcome");

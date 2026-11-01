@@ -64,7 +64,7 @@ test("literal Linux install and removal paths match the product configuration", 
   const read = file => readFileSync(new URL(`../../${file}`, import.meta.url), "utf8");
   const install = read("build/linux-after-install.sh");
   const remove = read("build/linux-after-remove.sh");
-  const policy = read("build/linux-openmausbot-browser.apparmor");
+  const policy = read("build/linux-sealbridge-desktop-browser.apparmor");
   const appRoot = `/opt/${product.executableName}`;
   const executable = `${appRoot}/${product.executableName}`;
   assert.ok(install.includes(`APP_ROOT="${appRoot}"`));
@@ -72,17 +72,17 @@ test("literal Linux install and removal paths match the product configuration", 
   assert.ok(remove.includes(`[ -L /usr/bin/${product.executableName} ]`));
   assert.ok(remove.includes(`[ "$(readlink /usr/bin/${product.executableName})" = "${executable}" ]`));
   assert.ok(remove.includes(`rm -- /usr/bin/${product.executableName}`));
-  assert.ok(policy.includes(`profile openmausbot-browser "${appRoot}/resources/browser-engine/chrome/chrome-headless-shell-linux64/chrome-headless-shell" flags=(unconfined)`));
+  assert.ok(policy.includes(`profile sealbridge-desktop-browser "${appRoot}/resources/browser-engine/chrome/chrome-headless-shell-linux64/chrome-headless-shell" flags=(unconfined)`));
   for (const hook of [install, remove]) {
     assert.ok(hook.includes("OPENMAUSBOT_POSTINSTALL_TEST_ROOT"));
-    assert.ok(hook.includes("$APPARMOR_DIR/openmausbot-browser"));
+    assert.ok(hook.includes("$APPARMOR_DIR/sealbridge-desktop-browser"));
     for (const [, message] of hook.matchAll(/echo "([^"\n]+)"/g)) {
       assert.ok(message.startsWith(product.productName), `installer message: ${message}`);
     }
   }
   const builder = parse(read("electron-builder.yml"));
-  assert.ok(builder.linux.extraResources.some(resource => resource.from === "build/linux-openmausbot-browser.apparmor" && resource.to === "openmausbot-browser.apparmor"));
-  assert.ok(install.includes("$APP_ROOT/resources/openmausbot-browser.apparmor"));
+  assert.ok(builder.linux.extraResources.some(resource => resource.from === "build/linux-sealbridge-desktop-browser.apparmor" && resource.to === "sealbridge-desktop-browser.apparmor"));
+  assert.ok(install.includes("$APP_ROOT/resources/sealbridge-desktop-browser.apparmor"));
 });
 
 test("builder desktop entry and main use the same launcher identity", async () => {
@@ -97,7 +97,8 @@ test("builder desktop entry and main use the same launcher identity", async () =
   }
   const main = read("electron/main.mjs");
   assert.ok(main.includes('import { product } from "./sealbridge/product.mjs";'));
-  const call = main.match(/app\.setDesktopName\([^;]+;/)?.[0];
+  assert.ok(main.startsWith('import "./sealbridge/app-identity.mjs";'));
+  const call = read("electron/sealbridge/app-identity.mjs").match(/app\.setDesktopName\([^;]+;/)?.[0];
   assert.ok(call);
   const names = [];
   vm.runInNewContext(call, { app: { setDesktopName: name => names.push(name) }, product });

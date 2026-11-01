@@ -1,3 +1,4 @@
+import { product } from "./sealbridge/product.mjs";
 const ALLOWED_PACKAGE_HOSTS = new Set(["github.com", "www.github.com", "raw.githubusercontent.com"]);
 const GROK_SHARE_PATH = /^\/bot\/([A-Za-z0-9_-]{21})\/?$/;
 
@@ -8,7 +9,7 @@ export function packageUrlFromDeepLink(rawValue) {
   } catch {
     return null;
   }
-  if (link.protocol !== "openmausbot:" || link.hostname !== "install") return null;
+  if (link.protocol !== `${product.urlScheme}:` || link.hostname !== "install") return null;
   const rawPackage = link.searchParams.get("url");
   if (!rawPackage) return null;
   let packageUrl;
