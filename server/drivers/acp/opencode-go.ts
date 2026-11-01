@@ -7,7 +7,7 @@ import { dirname, isAbsolute, join, relative, resolve as resolvePath, sep } from
 import { ATTACHMENTS_DIR } from "../../attachments.ts";
 import { cloudHomeConfigured } from "../../cloud-home.ts";
 import { DATA_DIR, OPENCODE_PROVIDER_ENV } from "../../config.ts";
-import { hostedWorkspaceConfigured } from "../../enterprise.ts";
+import { hostedWorkspaceConfigured } from "../../workspace-policy.ts";
 import { decodeInjectId, hostApiKey, localHost, mergeLocalInject } from "../local-inject.ts";
 import { applyStandaloneSpawnEnv } from "../../engine-install.ts";
 import { OPENCODE_STANDALONE } from "./opencode-release.ts";

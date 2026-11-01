@@ -5,7 +5,7 @@ import { loadBrand } from "../brand.ts";
 import { browserEngineStatus, ensureChrome, installAgentBrowserBinary, resolveAgentBrowserBinary } from "../browser-engine.ts";
 import { DATA_DIR, EVENTS_DIR, NATIVE_DIR, instanceConfigs, type AppConfig } from "../config.ts";
 import { boundRetentionDays, decisionsCsv, readDecisionRange, readDecisions, type DecisionRow } from "../decision-log.ts";
-import { editionForMembers, editionStatus, entitled } from "../enterprise.ts";
+import { editionForMembers, editionStatus, entitled } from "../edition.ts";
 import { fleetAvailable, fleetRequest, fleetSocketPath } from "../fleet-client.ts";
 import { noteKeyAccepted, noteKeyRejected } from "../key-rejections.ts";
 import type { OutboundCounts } from "../outbound-counts.ts";
@@ -83,7 +83,7 @@ export function createStatusRoutes(deps: StatusRouteDeps): RouteHandler {
     // Admin scope plus the `admin` entitlement; the socket's own permissions decide whether this workspace may drive the agent.
     const fleetRoute = /^\/api\/fleet(?:\/(workspaces(?:\/([a-z0-9-]+)(?:\/(users|suspend|resume))?)?|upgrade))?$/.exec(path);
     if (fleetRoute) {
-      if (!entitled("admin")) return json(res, 403, { error: "Workspaces need an enterprise licence with the admin feature." });
+      if (!entitled("admin")) return json(res, 403, { error: "Workspace fleet management is unavailable in this open-source distribution." });
       const socket = fleetSocketPath();
       if (!fleetAvailable(socket)) return json(res, 404, { error: "No fleet agent on this server. Run `openmausbot fleet init --domain … --operator <this user>` as root." });
       const [, resource, slug, sub] = fleetRoute;

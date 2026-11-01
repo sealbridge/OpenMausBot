@@ -12,7 +12,6 @@ pnpm exec vitest run server/memory-layer.e2e.test.ts
 pnpm exec vitest run server/reply-behaviour.e2e.test.ts
 pnpm exec vitest run server/memory-forget.test.ts server/drivers/agents-call.test.ts
 pnpm exec vitest run server/memory-capture-restart.e2e.test.ts
-pnpm exec vitest run server/spend-cap-api.test.ts
 pnpm exec vitest run server/memory-entries.test.ts server/recall.test.ts server/memory-upkeep.test.ts server/workspace.test.ts
 pnpm exec vitest run server/side-jobs.test.ts server/helper-model.e2e.test.ts
 pnpm exec vitest run src/components/bot-settings/MemorySection.test.ts src/lib/memory.test.ts server/drivers/agents-catalog-wire.test.ts

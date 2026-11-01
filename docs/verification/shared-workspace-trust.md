@@ -71,15 +71,8 @@ pnpm exec vitest run server/request-auth.test.ts server/decision-log.test.ts \
   calls through the resolver under each trust level, sessions under
   `service`, the desktop capability overriding `service`, the serving CLI's
   secret opening the pairing route and nothing else, and the start-up choice.
-- `server/hosted-access.test.ts` ("treats a session-less local caller as a
-  service by default") boots a portal-membership workspace with shared Full
-  access and no override: the start-up log line, the worker's whole path over
-  loopback (health, bot list, a Full-access thread, a guarded send, its
-  request fence), 403 for `PUT /api/config`, `POST /api/webhooks`, session
-  list and revocation, bot creation and loosening, and an unguarded send,
-  with nothing changed afterwards; then an admin portal session saves the
-  retention window and reads `membership`. The other cases in that file keep
-  `OMB_LOOPBACK_TRUST=owner` because they set fixtures up over loopback.
+- `server/hosted-access.test.ts` now verifies explicit refusal of hosted startup
+  in isolated homes. The local resolver and CLI tests retain their standalone cases.
 - `server/card-answerers.e2e.test.ts` boots a server with one admin and two
   members on the sign-in list and the fake ACP engine asking permission every
   turn: another member is refused on both respond routes, the requester
@@ -110,13 +103,14 @@ pnpm exec vitest run server/request-auth.test.ts server/decision-log.test.ts \
 - The Settings screens and the sign-in redirect were checked by rendering and
   unit tests, not in Electron or a browser.
 
-## Observed local result — 2026-09-23
+## Historical upstream result — 2026-09-23
 
 On a disposable worktree rebased onto OpenMausBot main `0bb37982`:
 `pnpm typecheck`, `pnpm lint`, `pnpm i18n:check`, `pnpm test:packaged-server`,
 and the files above plus `server/index.test.ts`,
 `server/chat-followups-restart.test.ts`, `server/steer-e2e.test.ts`,
-`server/routines-startup.test.ts`, `server/enterprise.test.ts`,
+`server/routines-startup.test.ts`,
+(the removed upstream layer test),
 `server/store.test.ts`, `server/cli-lifecycle.test.ts`,
 `server/cli-pair.test.ts`, `server/cli.test.ts` and
 `scripts/testing/verification-docs.test.ts` passed on macOS. Mutation checks,

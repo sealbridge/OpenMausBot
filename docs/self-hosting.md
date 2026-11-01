@@ -374,19 +374,11 @@ openmausbot fleet upgrade           # new release, then every running workspace 
 openmausbot fleet delete acme --yes # add --keep-data to keep the home folder
 ```
 
-Give `init` `--operator USER` (the Unix user your own workspace runs as; the
-user behind `sudo` by default) and it also installs the **fleet agent**: a
-root service on a Unix socket only that user may open. Your workspace then
-shows **Settings → Installations** (with the enterprise `admin` feature): create
-an installation, add or remove who may sign in, suspend, resume, delete, upgrade
-all, and see each one's spend this month. Every action goes through the
-agent's audit log at `/var/log/openmausbot/fleet.jsonl`.
-
-`https://acme.example.com` is up when `create` returns; the first admin signs
-in with an emailed code. `OMB_LICENSE_KEY` in the environment (or
-`--license-key`) is carried into every workspace so a partner's white-label
-key covers them all. Not root? Every command prints the exact steps to run as
-root instead, and `--dry-run` always prints.
+Fleet workspace administration through the server UI is unavailable in this OSS
+distribution. The standalone fleet CLI remains available. Legacy license settings
+have no effect and produce an operator notice. Hosted sign-in routes retain their
+OSS refusal responses while existing local owner access remains available; see
+[hosted workspace refusal](verification/hosted-workspaces.md).
 
 ## Signing the engines in without a terminal
 
@@ -1103,33 +1095,10 @@ curl -H "Authorization: Bearer $TOKEN" -o activity.csv \
 starts 30 days ago. Nothing here is sent to your organization's cloud Admin,
 which keeps its own activity log.
 
-## Spend limits and sell prices (enterprise)
+## Entitlement-only settings
 
-With the `budgets` entitlement, **Settings → Usage → Monthly spend limit**
-caps the workspace: once the month's cost reaches it, no bot starts a turn,
-whether a person wrote, a routine fired, a peer asked or a webhook arrived,
-until an admin raises it. A warning shows at a configurable percentage, and
-admins get one in-app notification the first time each month crosses the
-warning and one when it reaches the limit (a new month or a new limit starts
-over).
-
-The figure is every cost in the usage ledger. Claude reports its own cost
-(real on your keys, an equivalent on personal subscriptions). Codex, the
-OpenAI-compatible/OpenRouter engine, Grok, MiniMax and the ACP engines report
-tokens but no price, so the server books an **estimate** from a built-in list
-of vendor list prices (`server/model-prices.ts`, each entry with its source
-and the date it was read) and marks the row `costSource: "estimated"`. A model
-that is not in the list is unpriced and not counted; Usage says how many
-turns that was. Estimates use each vendor's standard short-context rate, so
-long prompts, cache writes and priority tiers cost more than estimated.
-
-With the `billing` entitlement, **Sell prices** takes your own price per
-million tokens by model id, `driver/model`, or `default`, and History and the
-CSV export gain a **billable** column next to the provider's cost. For an
-engine that reports no cost, a price you set for that exact model also
-replaces the list price in its estimate; `default` is used only for models
-the list does not know. Both are plain settings in `config.json` (`budgets`,
-`billing`) and through `PUT /api/config`.
+This distribution grants no entitlements. Entitlement-only settings remain inert,
+matching the upstream OSS build. See [the OSS regression recipe](verification/spend-cap.md).
 
 ## A bot that also runs outside the server
 

@@ -1,11 +1,8 @@
-// White-label: a brand.json next to the data dir, applied only with the `whitelabel` entitlement (an unlicensed server
-// reports what it found and keeps the default). Read on every request, so an edit shows on the next reload.
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 
 import { DATA_DIR } from "./config.ts";
-import { entitled } from "./enterprise.ts";
 
 const HEX_COLOUR = /^#[0-9a-fA-F]{6}$/;
 const MAX_LOGO_CHARS = 300_000;
@@ -55,9 +52,8 @@ export function brandFile(): string {
 }
 
 /** Never throws. */
-export function loadBrand(options: { file?: string; isEntitled?: (feature: string) => boolean } = {}): BrandStatus {
+export function loadBrand(options: { file?: string } = {}): BrandStatus {
   const file = options.file ?? brandFile();
-  const isEntitled = options.isEntitled ?? entitled;
   const fallback = (notice?: string): BrandStatus =>
     notice ? { brand: DEFAULT_BRAND, source: "default", file, notice } : { brand: DEFAULT_BRAND, source: "default", file };
   if (!existsSync(file)) return fallback();
@@ -73,10 +69,7 @@ export function loadBrand(options: { file?: string; isEntitled?: (feature: strin
     const where = issue?.path.length ? `${issue.path.join(".")}: ` : "";
     return fallback(`${file}: ${where}${issue?.message ?? "invalid"}; using the default brand`);
   }
-  if (!isEntitled("whitelabel")) {
-    return fallback(`${file} found but this server is not licensed for whitelabel; using the default brand`);
-  }
-  return { brand: parsed.data, source: "file", file };
+  return fallback(`${file} found but custom brand files are not supported; using the default brand`);
 }
 
 export function describeBrand(status: BrandStatus): string {

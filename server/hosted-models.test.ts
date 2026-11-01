@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
@@ -28,6 +28,29 @@ it("requires an explicit complete hosted policy and leaves normal desktops alone
     { ...env(), OMB_ADMIN_URL: "http://admin.example.test" }, { ...env(), OMB_DESKTOP_PARENT: "1" },
     { ...env(), OMB_HOSTED_MODELS: "{}" } ]) expect(() => hostedModelPolicy(directory(), invalid)).toThrow();
 });
+
+it.each<NodeJS.ProcessEnv>([
+  { OMB_HOSTED_MODEL_TOKEN: undefined },
+  { OMB_HOSTED_MODEL_TOKEN: "" },
+  { OMB_ADMIN_URL: "" },
+  { OMB_ADMIN_WORKSPACE: undefined },
+  { OMB_ADMIN_MEMBERSHIP: "local" },
+  { OMB_PUBLIC_URL: undefined },
+  { OMB_DESKTOP_PARENT: "1" },
+])("rejects incomplete portal-managed policy settings before writing provider configuration: %j", settings => {
+  const root = directory();
+  expect(() => hostedModelPolicy(root, { ...env(), ...settings }))
+    .toThrow("Hosted model access requires complete portal-managed configuration.");
+  expect(readdirSync(root)).toEqual([]);
+});
+
+it.each([undefined, "", "{}", "{", JSON.stringify({ anthropic: ["invalid/model"], openai: [], openrouter: [] })])(
+  "rejects an invalid catalog after validating portal-managed configuration: %j", catalog => {
+    const root = directory();
+    expect(() => hostedModelPolicy(root, { ...env(), OMB_HOSTED_MODELS: catalog })).toThrow("Invalid hosted model catalog.");
+    expect(readdirSync(root)).toEqual([]);
+  },
+);
 
 it("preserves allowed choices, normalizes legacy routes, and replaces only unassigned choices", () => {
   const policy = hostedModelPolicy(directory(), env())!;
@@ -83,7 +106,7 @@ it("uses bundled executable names unless the operator explicitly overrides them"
   expect(Object.keys(configs)).toEqual(["claude", "codex", "opencode"]);
 });
 
-it("sends a hosted Claude turn and helper through the approved model with synthetic CLI only", async () => {
+it("sends a hosted Claude turn and helper through the assigned model with synthetic CLI only", async () => {
   const root = directory(), policy = hostedModelPolicy(root, { ...env(), OMB_HOSTED_CLAUDE_CLI: join(import.meta.dirname, "testing/fake-claude-cli.ts") })!;
   const configs = policy.configs();
   const dump = join(root, "claude-spawn.json");

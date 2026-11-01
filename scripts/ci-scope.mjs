@@ -83,7 +83,7 @@ const AREAS = [
   [/^scripts\/.+\.test\.[cm]?[jt]sx?$/, "script-tests"],
   [/^src\/locales\/(?:(?!en\.json$)[^/]+\.json|[^/]+\.test\.ts)$/, "locales"],
   [/^(?:src|public)\/|^[^/]+-preview\.html$/, "web"],
-  [/^(?:server|shared|enterprise|companion|evals|skills|deploy|cloudflare\/composio-broker)\/|^(?:Dockerfile|\.dockerignore|compose\.yaml)$/, "server"],
+  [/^(?:server|shared|companion|evals|skills|deploy|cloudflare\/composio-broker)\/|^(?:Dockerfile|\.dockerignore|compose\.yaml)$/, "server"],
   [/^electron\/(?:cua|cua-failure|cua-connection|capabilities|screen-status|shared-cua-connection|shared-computer-access|lent-screen-tools|lent-screen-failures|paced-typing)\.[cm]js$/, "windows-computer-control"],
   [/^(?:electron|build)\/|^(?:electron-builder\.yml|index\.html)$/, "desktop"],
   [/^cloudflare\/control-plane\//, "control-plane"],
@@ -158,7 +158,7 @@ export function windowsReason({ files, labels = [], hostE2e = [], lines = () => 
 }
 
 /** True when two package.json texts differ only in the top-level "version"
- * (the release bump, prepare-release.yml). Anything else that changed, a
+ * (a version bump). Anything else that changed, a
  * reordered key included, or text that is not a JSON object, is false. */
 export function versionOnlyPackageJson(before, after) {
   let a, b;

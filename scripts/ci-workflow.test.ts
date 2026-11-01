@@ -133,39 +133,13 @@ describe("CI concurrency", () => {
     expect(delegated).not.toContain("/tasks/${peerThread.threadId}`");
   });
 
-  it("makes a release wait for its commit's CI gate before any draft", () => {
+  it("keeps public releases manually dispatched and disabled", () => {
     const release = parse(readFileSync(new URL("../.github/workflows/release.yml", import.meta.url), "utf8"));
-    expect(release.jobs.assemble.needs).toContain("ci");
-    expect(release.jobs.ci.needs).toBe("prepare");
-    expect(release.jobs.ci.permissions).toEqual({ actions: "write", contents: "write" });
-    const wait = release.jobs.ci.steps.find((step: { run?: string }) => step.run === "node scripts/release-ci.mjs");
-    expect(wait.if).toBe("${{ !inputs.ship_without_ci }}");
-    expect(wait.env).toMatchObject({ SHA: "${{ needs.prepare.outputs.sha }}", VERSION: "${{ needs.prepare.outputs.version }}" });
-    // The script reads ci.yml's gate by its job name.
-    expect(readFileSync(new URL("./release-ci.mjs", import.meta.url), "utf8")).toContain(`job.name === "${workflow.jobs.gate.name}"`);
-    // The release lane is a branch, so its runs get their own concurrency group.
-    expect(workflow.on).toHaveProperty("workflow_dispatch");
-  });
-
-  it("checks out every module the release gate imports", () => {
-    const release = parse(readFileSync(new URL("../.github/workflows/release.yml", import.meta.url), "utf8"));
-    const checkout = release.jobs.ci.steps.find((step: { uses?: string }) => step.uses?.startsWith("actions/checkout@"));
-    const sparse = (checkout.with["sparse-checkout"] as string).split("\n").map((line) => line.trim()).filter(Boolean);
-    const imports = [...readFileSync(new URL("./release-ci.mjs", import.meta.url), "utf8").matchAll(/^import .* from "\.\/([^"]+)";$/gm)]
-      .map((match) => `scripts/${match[1]}`);
-    expect(imports).toContain("scripts/ci-scope.mjs");
-    expect(sparse.sort()).toEqual(["scripts/release-ci.mjs", ...imports].sort());
-  });
-
-  it("builds the Windows Defender check's installer exactly as the release's Windows job does", () => {
-    const release = parse(readFileSync(new URL("../.github/workflows/release.yml", import.meta.url), "utf8"));
-    const check = parse(readFileSync(new URL("../.github/workflows/windows-defender-check.yml", import.meta.url), "utf8"));
-    type Step = { uses?: string; with?: unknown; run?: string; shell?: string };
-    const toolchainToInstaller = (steps: Step[]) => steps.slice(1, steps.findIndex((step) => step.run === "pnpm package:win") + 1)
-      .map(({ uses, with: inputs, run, shell }) => ({ uses, with: inputs, run, shell }));
-    expect(toolchainToInstaller(check.jobs.check.steps).at(-1)?.run).toBe("pnpm package:win");
-    expect(toolchainToInstaller(check.jobs.check.steps)).toEqual(toolchainToInstaller(release.jobs.windows.steps));
-    expect(check.jobs.check["runs-on"]).toBe(release.jobs.windows["runs-on"]);
+    expect(Object.keys(release.on)).toEqual(["workflow_dispatch"]);
+    expect(release.permissions).toEqual({ contents: "read" });
+    expect(Object.keys(release.jobs)).toEqual(["disabled"]);
+    expect(release.jobs.disabled.steps[0].run).toContain("Public releases are disabled");
+    expect(release.jobs.disabled.steps[0].run).toContain("exit 1");
   });
 
   it("lets the scope read the previous commit's CI and a pull request's labels, and nothing more", () => {

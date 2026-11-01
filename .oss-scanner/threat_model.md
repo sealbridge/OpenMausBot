@@ -21,8 +21,9 @@ The same TypeScript **harness server** (`server/`) runs in four places:
 - **Self-hosted server** (`openmausbot serve`, from npm or the root
   `Dockerfile`). People pair browsers, desktops and phones with it.
 - **Hosted or shared workspaces.** Several people sign in to one server
-  (email sign-in, members, `openmausbot fleet`). Members and roles live in
-  `enterprise/`, and the hook point is `server/enterprise.ts`.
+  (email sign-in, members, `openmausbot fleet`). Local membership remains in
+  core; hosted routes retain their OSS refusal responses and existing local
+  owner access is preserved.
 - **MausBot Cloud home.** Each customer gets one Fly app with one machine
   (the `cloud-home` stage of the root `Dockerfile`, plus `deploy/fly/`). Caddy
   terminates TLS, and the server stays on loopback. See `docs/cloud-pro.md`.
@@ -279,7 +280,7 @@ These are deliberate product decisions. Do not report them.
   - `server/webhook*.ts`;
   - `server/cloud-*.ts` and `deploy/fly/Caddyfile`;
   - `cloudflare/`;
-  - `enterprise/server/`.
+  - `server/workspace-policy.ts`.
 - **Less:**
   - `src/` (the web UI): in scope for script injection and for CSRF against
     the server;
