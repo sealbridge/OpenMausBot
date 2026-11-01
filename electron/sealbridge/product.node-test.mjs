@@ -97,7 +97,8 @@ test("builder desktop entry and main use the same launcher identity", async () =
   }
   const main = read("electron/main.mjs");
   assert.ok(main.includes('import { product } from "./sealbridge/product.mjs";'));
-  const call = main.match(/app\.setDesktopName\([^;]+;/)?.[0];
+  assert.ok(main.startsWith('import "./sealbridge/app-identity.mjs";'));
+  const call = read("electron/sealbridge/app-identity.mjs").match(/app\.setDesktopName\([^;]+;/)?.[0];
   assert.ok(call);
   const names = [];
   vm.runInNewContext(call, { app: { setDesktopName: name => names.push(name) }, product });

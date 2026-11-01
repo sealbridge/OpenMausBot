@@ -182,3 +182,121 @@ Local validation:
 
 No server/conversation behavior changed; no live application/data was used.
 No staging or commit was performed.
+
+## Disabled-update Linux package verification follow-up (2026-11-01)
+
+Reviewed `/workspace/codex2/ci-pkg-linux.log` in full. Packaging completed,
+including AppImage and DEB creation, and the artifact fork-boundary check
+passed. The next step failed because `verify-linux-package.mjs` required
+`resources/app-update.yml` and asserted the upstream GitHub owner/repository.
+G2 sets `electron-builder.yml`'s `publish: null` and the product's
+`updateChannel: "disabled"`. The installed electron-builder implementation
+writes that file only for a non-null publish configuration; its publish
+configuration resolver returns null for explicit `publish: null`. The missing
+file is therefore expected, rather than a packaging failure.
+
+Changed the Linux verifier to reject any `app-update.yml` entry in the unpacked
+resources, extracted DEB, and extracted AppImage. This rejects upstream and
+other feeds, directories, and dangling symlinks. Added five isolated temporary
+resources fixtures covering absence and those unexpected entries (the symlink
+case runs outside Windows). No update configuration or upstream feed was
+restored.
+
+Reviewed the remaining verifier and the CI job's DEB upgrade, browser and
+lifecycle smoke scripts. Product executable, package, desktop-entry and install
+paths already use G2 identifiers; the health response retains its existing
+`openmausbot` wire identity. No additional G2-induced failure was identified by
+inspection in that CI job. This is a static assessment, not a successful rerun
+of the package job.
+
+The separate manual `package-linux.yml` workflow still invoked the real-feed
+AppImage update smoke, which would next fail copying the absent metadata.
+Removed that step and made direct `smoke-linux-update.mjs` execution skip when
+updates are disabled, before inspecting artifacts or contacting a feed.
+Windows `package-win.yml` already rejects `app-update.yml`, so needed no
+change. Its optional `latest.yml` upload glob accompanies required installer
+files and does not independently require a feed. macOS uses the same global
+`publish: null`; no active macOS workflow requires update metadata. The
+standalone `regenerate-mac-feed.mjs` is an explicit feed maintenance tool,
+not invoked by current packaging or the disabled release workflow.
+
+Validation (pnpm commands used
+`COREPACK_HOME=/workspace/codex2/.corepack corepack pnpm`):
+
+- `pnpm exec vitest run scripts/verify-linux-package.test.mjs
+  scripts/verify-engines-ui.test.mjs scripts/check-fork-boundaries.test.mjs
+  scripts/linux-after-install.test.mjs
+  scripts/testing/linux-package-cua-driver.test.mjs
+  scripts/ci-linux-lanes.test.ts`: **76 passed**, six files.
+- An initial run also included `scripts/ci-workflow.test.ts`: **109 passed,
+  12 failed**. All 12 failures were its subprocess gate checks blocked by
+  `spawnSync /usr/local/lib/nodejs/node EPERM`; the other 33 workflow tests
+  passed. No gate behavior failure was established by those blocked tests.
+- `pnpm typecheck`: passed.
+- `pnpm lint`: passed.
+- `node scripts/check-fork-boundaries.mjs`: blocked by `spawnSync git EPERM`.
+  Shell `git ls-files --cached --others --exclude-standard -z`, then the
+  exported `checkSourceFiles` with that same file list: passed.
+- `node --check scripts/verify-linux-package.mjs` and
+  `node --check scripts/smoke-linux-update.mjs`: passed.
+- `git diff --check`: passed.
+
+No local release artifacts are available, so native Linux packaging, installed
+DEB/AppImage lifecycle, Windows/macOS packages and the Electron update-smoke
+skip were not executed. No server/conversation behavior changed and no live
+application or user data was used. No staging or commit was performed.
+
+## Vitest CI follow-up (2026-11-01)
+
+The supplied CI list contains 377 failure entries across 67 files (including
+repeated entries from OS jobs). The failures fell into these groups:
+
+- Server fixtures seeded/read `~/.openmausbot`, while G2 reads its dedicated
+  product data directory. Missing configuration, sessions and bots caused
+  cascading 401/404 responses, failed turns and empty event assertions.
+- Display-copy assertions retained MausBot/OpenMausBot instead of the product
+  name, including `{app}` interpolation, brand responses and the web manifest.
+  File-sync assertions also expected the upstream Documents folder. Fixtures
+  and expectations now use `branding/product.json`; desktop thread links use
+  `urlScheme`. Mobile pairing retains its existing external scanner protocol.
+- Updater integration tests assumed updates were enabled. They now inject an
+  enabled product configuration through a test module mock, preserving the
+  authorization, download and installation checks. An additional disabled-build
+  test verifies idle state and no check/download/install calls. Production
+  configuration remains disabled.
+- Legacy migration and avatar assertions expected upstream behavior. Tests now
+  check upstream data remains intact, the fork has an independent environment,
+  and persisted upstream body selections render the fork placeholder. Uploaded
+  image and explicit picture behavior remain covered; no tests were skipped.
+- G2 grew three files past their existing size ratchets. Desktop profile identity
+  and placeholder definitions were extracted; obsolete CLI usage comments were
+  removed. Ratchet limits were not increased. Related identity Node tests were
+  updated for the extracted module.
+
+Final local verification (Linux, with
+`COREPACK_HOME=/workspace/codex2/.corepack corepack pnpm exec vitest run <files>`):
+
+| Batch | Files | Tests | Result |
+| --- | ---: | ---: | --- |
+| `server/index.test.ts` | 1 | 323 | passed |
+| Other server files in the supplied failure list | 18 | 159 | passed |
+| Renderer component and pairing files in that list | 36 | 616 | passed |
+| Library, updater and script files in that list | 12 | 197 | passed |
+| Total supplied failure files | 67 | 1295 | passed |
+
+Additional checks: `server/cli.test.ts` (33 tests),
+`node --test electron/sealbridge/product.node-test.mjs electron/rebrand.node-test.mjs`
+(9 tests), `pnpm typecheck`, `pnpm lint`,
+`node scripts/check-fork-boundaries.mjs`, and `git diff --check` passed.
+
+Following `docs/verification/README.md`, launched a disposable fixture with
+`node --experimental-strip-types scripts/control-omb.ts launch`, then ran
+`doctor --url http://127.0.0.1:21389` successfully. Its data directory was
+`/tmp/openmausbot-verify-data-dsz6Dl`; no live app or user data was used.
+The launcher evidence log is
+`/tmp/openmausbot-verification-evidence/server-1793541557464-3.log`.
+
+Windows was not executed locally. Changed filesystem expectations use `join()`
+and product fields rather than literal platform separators; Windows validation
+and the complete CI matrix remain for CI. Existing uncommitted Linux packaging
+verification changes were preserved. No staging or commit was performed.

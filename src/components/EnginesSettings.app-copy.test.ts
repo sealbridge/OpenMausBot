@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import product from "../../branding/product.json";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -6,7 +7,7 @@ import { BotEditorStore, initialState, type InstanceInfo, type useStore } from "
 import { EnginesSettings } from "./EnginesSettings";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-const NOTICE = "Another copy of OpenCode on this computer doesn't start, so OpenCode now uses the copy MausBot installed.";
+const NOTICE = `Another copy of OpenCode on this computer doesn't start, so OpenCode now uses the copy ${product.productName} installed.`;
 const install: InstanceInfo["install"] = {
   platform: "linux", command: { linux: "npm install -g opencode-ai" }, needsNode: true,
   server: { standalone: { version: "1.19.4", downloadBytes: 64_291_659 } },

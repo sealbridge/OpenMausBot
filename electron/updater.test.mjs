@@ -16,7 +16,13 @@ const CLOUD = "https://home-7f3k2.fly.dev";
 const OTHER = "https://bots.example.test";
 const OWN = "https://omb-c-a.fly.dev";
 
-const fixture = vi.hoisted(() => ({ autoUpdater: null, handlers: new Map() }));
+const fixture = vi.hoisted(() => ({ autoUpdater: null, handlers: new Map(), updateChannel: "stable" }));
+
+// Enabled configurations still need the updater's authorization and installation contract.
+vi.mock("./sealbridge/product.mjs", async (importOriginal) => {
+  const original = await importOriginal();
+  return { ...original, product: { ...original.product, get updateChannel() { return fixture.updateChannel; } } };
+});
 
 vi.mock("electron", () => ({
   app: { isPackaged: true, getPath: () => "/unused-updater-test-log", getVersion: () => "1.0.0", hide: vi.fn() },
@@ -120,6 +126,7 @@ const settle = async () => {
 };
 
 beforeEach(() => {
+  fixture.updateChannel = "stable";
   localOriginModule.setLocalOrigin(LOCAL);
   vi.useFakeTimers();
 });
@@ -420,4 +427,18 @@ it("sends updater progress to a reopened window without restarting the updater",
     .toEqual(["checking", "downloading", "downloading", ...(process.platform === "darwin" ? ["preparing"] : []), "downloaded"]);
   expect(autoUpdater.eventNames().reduce((count, name) => count + autoUpdater.listenerCount(name), 0)).toBe(listenerCount);
   expect(vi.getTimerCount()).toBe(timerCount);
+});
+
+it("keeps disabled builds idle without checking, downloading or installing", async () => {
+  fixture.updateChannel = "disabled";
+  const local = page(LOCAL);
+  const { updater, autoUpdater, handlers } = await load(() => true);
+  updater.attachUpdaterWindow(local);
+  updater.startUpdater();
+  await handlers.get("update:check")(local.event);
+  await handlers.get("update:install")(local.event);
+  expect(handlers.get("update:get-state")(local.event)).toMatchObject({ status: "idle" });
+  expect(autoUpdater.checkForUpdates).not.toHaveBeenCalled();
+  expect(autoUpdater.downloadUpdate).not.toHaveBeenCalled();
+  expect(autoUpdater.quitAndInstall).not.toHaveBeenCalled();
 });

@@ -1,3 +1,4 @@
+import product from "../../branding/product.json";
 import { describe, expect, it } from "vitest";
 import en from "@/locales/en.json";
 import type { Bot, InstanceInfo } from "@/state/store";
@@ -64,7 +65,7 @@ describe("local computer UI eligibility", () => {
     expect(localComputerSelectable({ capabilities, providerSupportsLocal: true })).toBe(true);
     expect(localComputerSelectable({ capabilities, providerSupportsLocal: false })).toBe(false);
     expect(localComputerDisabledReason({ capabilities, providerSupportsLocal: true })).toBe(
-      "Bots can't use this PC right now. Restart MausBot, and if that doesn't help, open Settings → Diagnostics.",
+      `Bots can't use this PC right now. Restart ${product.productName}, and if that doesn't help, open Settings → Diagnostics.`,
     );
   });
 
@@ -288,7 +289,7 @@ describe("what the person reads about using this computer", () => {
   it("says what to do in plain words, never the parts underneath", () => {
     expect(reasons.every((reason) => typeof reason === "string" && reason.length > 0)).toBe(true);
     for (const reason of reasons) expect(reason, reason!).not.toMatch(JARGON);
-    expect(reasons[3]).toBe("Only the MausBot app on this computer can let a bot use it. Open the app here to use it.");
+    expect(reasons[3]).toBe(`Only the ${product.productName} app on this computer can let a bot use it. Open the app here to use it.`);
   });
 
   it("keeps the same plain words in the questions and the place lines the app shows", () => {

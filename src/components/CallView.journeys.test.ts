@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 // Pages get the bridge the real preload builds for them and the capabilities the real builder reports.
+import product from "../../branding/product.json";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
@@ -291,7 +292,7 @@ describe("calling a bot off the Mac", () => {
     expect(globalThis.navigator.mediaDevices).toBeUndefined();
     chat(SERVER);
     press(callButton());
-    await vi.waitFor(() => expect(text()).toContain("Live calls need a microphone, and this window can't use one. Open MausBot at a secure https address to make the call."));
+    await vi.waitFor(() => expect(text()).toContain(`Live calls need a microphone, and this window can't use one. Open ${product.productName} at a secure https address to make the call.`));
     expect(text()).not.toContain("WebRTC");
     expect(text()).not.toContain(KEY_NEEDED);
     expect(requests.filter((request) => request.method !== "GET")).toEqual([]);

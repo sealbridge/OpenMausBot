@@ -41,14 +41,8 @@ export interface CursorSilhouette {
   anchor: { x: number; y: number; scale: number }
 }
 
-export const DEFAULT_SILHOUETTE: CursorSilhouette = {
-  name: "Sealbridge placeholder",
-  fit: "",
-  body: '<image href="/app-icon.svg" x="-15" y="-15" width="258" height="258" />',
-  clip: "",
-  anchor: { x: 0, y: 0, scale: 1 },
-};
-const silhouette = DEFAULT_SILHOUETTE;
+export { DEFAULT_SILHOUETTE } from "./avatar-placeholder";
+import { DEFAULT_SILHOUETTE as silhouette } from "./avatar-placeholder";
 
 export const DEFAULT_GRADIENT: [string, string, string] = ["#9FE6B5","#3FAE6E","#1C7A4C"]
 

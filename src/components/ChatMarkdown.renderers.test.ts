@@ -1,3 +1,4 @@
+import product from "../../branding/product.json";
 import { createElement } from "react";
 import * as React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -65,7 +66,7 @@ describe("ChatMarkdown element renderers", () => {
 
     vi.mocked(React.use).mockClear();
     vi.mocked(React.useContext).mockClear();
-    markdownProps(before, "Done in [QA](OpenMausBot://thread/qa-245?bot=scout).");
+    markdownProps(before, `Done in [QA](${product.urlScheme}://thread/qa-245?bot=scout).`);
     expect(threadListReads()).toBe(1);
   });
 });

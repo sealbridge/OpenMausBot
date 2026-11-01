@@ -1,3 +1,4 @@
+import product from "../branding/product.json" with { type: "json" };
 import { spawn, type ChildProcess } from "node:child_process";
 import { request } from "node:http";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
@@ -119,11 +120,11 @@ async function pairingCode(scopes?: string[]): Promise<{ code: string; credentia
 beforeAll(async () => {
   home = mkdtempSync(join(tmpdir(), "omb-remote-test-"));
   const staticDir = join(home, "static");
-  mkdirSync(join(home, ".openmausbot"), { recursive: true });
+  mkdirSync(join(home, `.${product.dataDirName}`), { recursive: true });
   mkdirSync(join(staticDir, "assets"), { recursive: true });
   writeFileSync(join(staticDir, "index.html"), "<!doctype html><title>Served UI</title>");
   // Avoid probing whatever agent CLIs the test machine has installed.
-  writeFileSync(join(home, ".openmausbot", "config.json"), JSON.stringify({
+  writeFileSync(join(home, `.${product.dataDirName}`, "config.json"), JSON.stringify({
     instances: { fixture: { driver: "remote-session-test-shadow" } },
     profile: { name: "Security fixture", email: "private@example.invalid" },
     vps: { sshAlias: "fixture-private-host" },

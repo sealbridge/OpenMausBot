@@ -17,10 +17,11 @@ test("desktop profile identity is set before any path consumer and the instance 
   const home = mkdtempSync(path.join(tmpdir(), "sealbridge-identity-"));
   t.after(() => rmSync(home, { recursive: true, force: true }));
   const main = read("./main.mjs");
-  const initialization = main.slice(main.indexOf("app.setName(product.productName);"), main.indexOf("let startupScreen = null;"));
+  const initialization = read("./sealbridge/app-identity.mjs").replace(/^import .*;\n/gm, "");
+  assert.ok(main.startsWith('import "./sealbridge/app-identity.mjs";'));
   const values = {};
   vm.runInNewContext(initialization, {
-    fs, path, product, process: { platform: "win32" },
+    mkdirSync: fs.mkdirSync, join: path.join, product, process: { platform: "win32" },
     app: {
       getPath: key => { assert.equal(key, "appData"); return home; },
       setPath: (key, value) => { assert.ok(fs.statSync(value).isDirectory()); values[key] = value; },
@@ -29,8 +30,8 @@ test("desktop profile identity is set before any path consumer and the instance 
     },
   });
   assert.deepEqual(values, { name: product.productName, userData: path.join(home, product.dataDirName), appId: product.appId });
-  assert.ok(main.indexOf(initialization) < main.indexOf('app.getPath("userData")'));
-  assert.ok(main.indexOf(initialization) < main.indexOf("app.requestSingleInstanceLock()"));
+  assert.ok(main.indexOf('import "./sealbridge/app-identity.mjs";') < main.indexOf('app.getPath("userData")'));
+  assert.ok(main.indexOf('import "./sealbridge/app-identity.mjs";') < main.indexOf("app.requestSingleInstanceLock()"));
   assert.ok(main.includes('path.join(app.getPath("home"), `.${product.dataDirName}`)'));
   assert.ok(!main.includes('".openmausbot"'));
 });

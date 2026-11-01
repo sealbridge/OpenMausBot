@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import product from "../../../branding/product.json";
 import { createElement } from "react";
 import { flushSync } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
@@ -272,10 +273,10 @@ describe("on a Cloud", () => {
   it("never asks the person to keep the app open for another app's automation", () => {
     const [automation] = automationsFrom({ routines: [], webhooks: [webhook] as never, runs: [] });
     const props = { automation: automation!, sentence: "s", onClose: vi.fn(), onEdit: vi.fn(), onDeleted: vi.fn() };
-    expect(mount(createElement(AutomationPanel, props)).textContent).toContain("Keep MausBot open so it can receive.");
+    expect(mount(createElement(AutomationPanel, props)).textContent).toContain(`Keep ${product.productName} open so it can receive.`);
     root!.unmount();
     fixture.state.config = { cloudHome: true };
-    expect(mount(createElement(AutomationPanel, props)).textContent).not.toContain("Keep MausBot open");
+    expect(mount(createElement(AutomationPanel, props)).textContent).not.toContain(`Keep ${product.productName} open`);
   });
 });
 

@@ -1,3 +1,4 @@
+import product from "../../branding/product.json";
 import { Children, createElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -297,7 +298,7 @@ describe("routine editor", () => {
   it("shows a saved startup choice when the simple editor opens", () => {
     const html = editor({ ...routine, runOnStartup: true });
     expect(html).toContain('aria-expanded="true"');
-    expect(html).toMatch(/<input type="checkbox" aria-label="Also run when MausBot starts"[^>]*checked[^>]*>/);
+    expect(html.replaceAll(product.productName, "{app}")).toMatch(/<input type="checkbox" aria-label="Also run when \{app\} starts"[^>]*checked[^>]*>/);
   });
 
   it("offers Remember the last run for a repeating routine, off unless the routine has it", () => {

@@ -22,10 +22,11 @@ describe("CarvedAvatar", () => {
     }
   });
 
-  it("is what MausAvatar wears for a Halloween body", () => {
+  it("keeps the fork placeholder for a persisted Halloween body", () => {
     const markup = renderToStaticMarkup(createElement(MausAvatar, { color: "orange", bodyId: "pumpkin", animated: false }));
-    expect(markup).toContain('data-carved-body="pumpkin"');
-    expect(markup).not.toContain("linearGradient");
+    expect(markup).toContain('href="/app-icon.svg"');
+    expect(markup).not.toContain('data-carved-body="pumpkin"');
+    expect(markup).toContain("linearGradient");
   });
 
   it("fills flat with the bot's colour, pale for the ghost, bone for the skull", () => {

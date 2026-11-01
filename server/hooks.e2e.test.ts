@@ -1,4 +1,5 @@
 // POSIX-gated: the fake CLI is a shebang script.
+import product from "../branding/product.json" with { type: "json" };
 import { spawn, type ChildProcess } from "node:child_process";
 import { chmodSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -48,8 +49,8 @@ function harness(label: string, serverEnv: Record<string, string>, instanceEnv: 
   beforeAll(async () => {
     chmodSync(FAKE_CLAUDE, 0o755);
     home = mkdtempSync(join(tmpdir(), `omb-hooks-${label}-`));
-    mkdirSync(join(home, ".openmausbot"), { recursive: true });
-    writeFileSync(join(home, ".openmausbot", "config.json"), JSON.stringify({
+    mkdirSync(join(home, `.${product.dataDirName}`), { recursive: true });
+    writeFileSync(join(home, `.${product.dataDirName}`, "config.json"), JSON.stringify({
       instances: {
         claude: {
           driver: "claudeAgent",
@@ -116,7 +117,7 @@ posixOnly("engine hooks e2e (fake Claude honouring the settings hooks)", () => {
       expect(row.tool).not.toHaveProperty("outputPath");
     }
     expect(JSON.stringify(tools)).not.toContain(h.home());
-    const root = join(h.home(), ".openmausbot", "tool-results");
+    const root = join(h.home(), `.${product.dataDirName}`, "tool-results");
     const threads = readdirSync(root);
     expect(threads).toHaveLength(1);
     const dir = join(root, threads[0]!);

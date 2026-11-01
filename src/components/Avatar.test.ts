@@ -9,7 +9,7 @@ import {
   type BotAvatarProps,
   type MausAvatarProps,
 } from "./Avatar";
-import { MASCOT_BODIES } from "../../shared/mascot-bodies";
+import { DEFAULT_SILHOUETTE } from "./CursorAvatar";
 
 const render = (props: Partial<MausAvatarProps>) =>
   renderToStaticMarkup(createElement(MausAvatar, { color: "green", animated: false, ...props }));
@@ -20,20 +20,20 @@ const renderBot = (bot: Partial<BotAvatarProps["bot"]>) =>
   );
 
 describe("MausAvatar body", () => {
-  it("wears the cursor when no body is given", () => {
-    expect(render({})).toContain(MASCOT_BODIES.cursor.fit);
+  it("wears the fork placeholder when no body is given", () => {
+    expect(render({})).toContain(DEFAULT_SILHOUETTE.body);
   });
 
-  it("wears the body it is given", () => {
+  it("keeps the fork placeholder for a persisted upstream body", () => {
     const markup = render({ bodyId: "star" });
-    expect(markup).toContain(MASCOT_BODIES.star.fit);
+    expect(markup).toContain(DEFAULT_SILHOUETTE.body);
   });
 
-  it("falls back to the cursor for an unknown body", () => {
+  it("keeps the fork placeholder for an unknown body", () => {
     // SAFETY: "hexagram" is deliberately not a MascotBodyId, to exercise the runtime fallback for persisted or streamed
     // data.
     expect(render({ bodyId: "hexagram" as MausAvatarProps["bodyId"] })).toContain(
-      MASCOT_BODIES.cursor.fit,
+      DEFAULT_SILHOUETTE.body,
     );
   });
 
@@ -60,7 +60,7 @@ describe("mascot facial feature colors", () => {
 
   it("keeps default inks when an override is reset or comes from an older profile", () => {
     expect(renderBot({ color: "chrome", mascotFaceColor: null })).toContain('stroke="#1E2833"');
-    expect(renderBot({ mascotBody: "pumpkin" })).toContain('stroke="#0d0a10"');
+    expect(renderBot({ mascotBody: "pumpkin" })).toContain('stroke="#ffffff"');
     expect(renderBot({})).toContain('stroke="#ffffff"');
   });
 

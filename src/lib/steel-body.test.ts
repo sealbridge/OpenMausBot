@@ -29,8 +29,8 @@ describe("MausBot's rendered steel body", () => {
     expect(withPicture).toContain('<image href="/steel/cursor-256.webp" x="-15" y="-15" width="258.541" height="258.541" preserveAspectRatio="none"');
     expect(withPicture).not.toMatch(/fill="url\(#[^)]+-grad\)"/);
     expect(withPicture).toMatch(/<g clip-path="url\(#[^)]+-clip\)" visibility="hidden">/);
-    expect(svg()).toMatch(/fill="url\(#[^)]+-grad\)"/);
-    expect(svg()).not.toContain("<image");
+    expect(svg()).toContain('href="/app-icon.svg"');
+    expect(svg()).not.toContain("/steel/cursor-256.webp");
     expect(svg()).not.toContain('visibility="hidden"');
   });
 });

@@ -1,3 +1,4 @@
+import "./sealbridge/app-identity.mjs";
 import { app, autoUpdater as nativeAutoUpdater, BrowserWindow, Tray, WebContentsView, clipboard, desktopCapturer, dialog, globalShortcut, ipcMain, Menu, nativeImage, Notification, powerMonitor, powerSaveBlocker, safeStorage, screen, session, shell, systemPreferences, utilityProcess, nativeTheme } from "electron";
 import { createRequire } from "node:module";
 import { randomBytes, randomUUID } from "node:crypto";
@@ -41,11 +42,6 @@ import { createLendingDialogs } from "./lending-dialogs.mjs";
 import { createActivityWindow } from "./lending-activity-window.mjs";
 import { missingPermissions } from "./lent-screen-failures.mjs";
 import { createScreenControl } from "./screen-control.mjs"; import { createAskPrompt } from "./ask-prompt.mjs";
-app.setName(product.productName);
-fs.mkdirSync(path.join(app.getPath("appData"), product.dataDirName), { recursive: true });
-app.setPath("userData", path.join(app.getPath("appData"), product.dataDirName));
-if (process.platform === "win32") app.setAppUserModelId(product.appId);
-
 let startupScreen = null;
 let desktopTray = null;
 import { collisionFreeDownloadPath, defaultSaveName, openLogsFolder, revealDownloadWhenDone, revealInFolder, withSavableFile } from "./save-file.mjs";
@@ -181,11 +177,7 @@ function applyUnreadBadge(win = mainWindow) {
   }
   if (process.platform === "darwin" || process.platform === "linux") app.setBadgeCount(count);
 }
-// GNOME groups the window with its desktop entry only when both identities match; set before ready.
-if (process.platform === "linux") {
-  if (linuxDisablesGpu()) app.disableHardwareAcceleration();
-  app.setDesktopName(product.desktopName);
-}
+if (process.platform === "linux" && linuxDisablesGpu()) app.disableHardwareAcceleration();
 
 if (!app.requestSingleInstanceLock()) {
   console.log("[desktop] Sealbridge Desktop is already running — focusing that window");

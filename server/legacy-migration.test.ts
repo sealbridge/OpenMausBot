@@ -1,4 +1,4 @@
-// Anything touching the new dir before ensureDirs() runs would make the ~/.opengrokbot rename a no-op: this pins the order.
+import product from "../branding/product.json" with { type: "json" };
 import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -26,6 +26,9 @@ beforeAll(async () => {
     instances: { fixture: { driver: "migration-test-shadow" } },
   }));
   writeFileSync(join(legacy, "keep-me.txt"), "carried over");
+  const fresh = join(home, `.${product.dataDirName}`);
+  mkdirSync(fresh, { recursive: true });
+  writeFileSync(join(fresh, "config.json"), JSON.stringify({ instances: { fixture: { driver: "isolation-test-shadow" } } }));
   child = spawn(process.execPath, [join(SERVER_DIR, "index.ts")], {
     cwd: ROOT,
     env: {
@@ -57,11 +60,12 @@ afterAll(async () => {
   await removeTempDir(home);
 });
 
-describe("legacy data dir", () => {
-  it("is renamed to the new name on first boot, with its contents and a fresh environment id", () => {
-    const fresh = join(home, ".openmausbot");
-    expect(existsSync(join(home, ".opengrokbot"))).toBe(false);
-    expect(readFileSync(join(fresh, "keep-me.txt"), "utf8")).toBe("carried over");
+describe("upstream data isolation", () => {
+  it("leaves upstream data intact and creates an independent environment", () => {
+    const fresh = join(home, `.${product.dataDirName}`);
+    expect(existsSync(join(home, ".opengrokbot"))).toBe(true);
+    expect(readFileSync(join(home, ".opengrokbot", "keep-me.txt"), "utf8")).toBe("carried over");
+    expect(existsSync(join(fresh, "keep-me.txt"))).toBe(false);
     expect(readFileSync(join(fresh, "environment-id"), "utf8").trim()).toMatch(/^[0-9a-f-]{36}$/);
   });
 });

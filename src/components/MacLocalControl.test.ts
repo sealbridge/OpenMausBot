@@ -1,3 +1,4 @@
+import product from "../../branding/product.json";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, describe, expect, it, vi } from "vitest";
@@ -18,9 +19,9 @@ afterAll(() => vi.unstubAllGlobals());
 describe("Mac local computer status", () => {
   it("shows the recorded Accessibility failure and its matching recovery actions", () => {
     const markup = renderToStaticMarkup(createElement(MacLocalControl));
-    expect(markup).toContain("Accessibility is required for MausBot");
+    expect(markup).toContain(`Accessibility is required for ${product.productName}`);
     expect(markup).toContain("Open Accessibility Settings");
-    expect(markup).toContain("Relaunch MausBot");
+    expect(markup).toContain(`Relaunch ${product.productName}`);
     expect(markup).not.toContain("Open Screen Recording Settings");
     expect(markup).toContain("Driver detail");
   });
@@ -30,7 +31,7 @@ describe("Mac local computer status", () => {
     const markup = renderToStaticMarkup(createElement(MacLocalControl));
     expect(markup).toContain("Local computer control is not ready");
     expect(markup).not.toContain("Accessibility is required");
-    expect(markup).not.toContain("Relaunch MausBot</button>");
+    expect(markup).not.toContain(`Relaunch ${product.productName}</button>`);
   });
 
   it("does not offer host repair actions to a remote renderer", () => {

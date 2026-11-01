@@ -1,3 +1,4 @@
+import product from "../../branding/product.json";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, describe, expect, it, vi } from "vitest";
@@ -90,7 +91,7 @@ describe("Computer panel Works on", () => {
   it("lists neither on My Cloud, and says why", () => {
     const markup = computerTab({ cloudHome: true });
     expect(places(markup)).toEqual(["Auto", "Cloud desktop", "Browser", "Off"]);
-    expect(markup).toContain("Choose where this bot works. It can also use your computer whenever MausBot is open on it.");
+    expect(markup).toContain(`Choose where this bot works. It can also use your computer whenever ${product.productName} is open on it.`);
   });
 });
 
