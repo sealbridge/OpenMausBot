@@ -13,28 +13,30 @@ import { isOrganizationDeepLink } from "./organization-entry.mjs";
 
 const read = file => readFileSync(new URL(file, import.meta.url), "utf8");
 
-test("desktop profile identity is set before any path consumer and the instance lock", t => {
-  const home = mkdtempSync(path.join(tmpdir(), "sealbridge-identity-"));
-  t.after(() => rmSync(home, { recursive: true, force: true }));
-  const main = read("./main.mjs");
-  const initialization = read("./sealbridge/app-identity.mjs").replace(/^import .*;\n/gm, "");
-  assert.ok(main.startsWith('import "./sealbridge/app-identity.mjs";'));
-  const values = {};
-  vm.runInNewContext(initialization, {
-    mkdirSync: fs.mkdirSync, join: path.join, product, process: { platform: "win32" },
-    app: {
-      getPath: key => { assert.equal(key, "appData"); return home; },
-      setPath: (key, value) => { assert.ok(fs.statSync(value).isDirectory()); values[key] = value; },
-      setName: value => { values.name = value; },
-      setAppUserModelId: value => { values.appId = value; },
-    },
+for (const newline of ["\n", "\r\n"]) {
+  test(`desktop profile identity precedes path consumers and the lock (${JSON.stringify(newline)})`, t => {
+    const home = mkdtempSync(path.join(tmpdir(), "sealbridge-identity-"));
+    t.after(() => rmSync(home, { recursive: true, force: true }));
+    const main = read("./main.mjs");
+    const initialization = read("./sealbridge/app-identity.mjs").replace(/\r?\n/g, newline).replace(/^import .*;\r?\n/gm, "");
+    assert.ok(main.startsWith('import "./sealbridge/app-identity.mjs";'));
+    const values = {};
+    vm.runInNewContext(initialization, {
+      mkdirSync: fs.mkdirSync, join: path.join, product, process: { platform: "win32" },
+      app: {
+        getPath: key => { assert.equal(key, "appData"); return home; },
+        setPath: (key, value) => { assert.ok(fs.statSync(value).isDirectory()); values[key] = value; },
+        setName: value => { values.name = value; },
+        setAppUserModelId: value => { values.appId = value; },
+      },
+    });
+    assert.deepEqual(values, { name: product.productName, userData: path.join(home, product.dataDirName), appId: product.appId });
+    assert.ok(main.indexOf('import "./sealbridge/app-identity.mjs";') < main.indexOf('app.getPath("userData")'));
+    assert.ok(main.indexOf('import "./sealbridge/app-identity.mjs";') < main.indexOf("app.requestSingleInstanceLock()"));
+    assert.ok(main.includes('path.join(app.getPath("home"), `.${product.dataDirName}`)'));
+    assert.ok(!main.includes('".openmausbot"'));
   });
-  assert.deepEqual(values, { name: product.productName, userData: path.join(home, product.dataDirName), appId: product.appId });
-  assert.ok(main.indexOf('import "./sealbridge/app-identity.mjs";') < main.indexOf('app.getPath("userData")'));
-  assert.ok(main.indexOf('import "./sealbridge/app-identity.mjs";') < main.indexOf("app.requestSingleInstanceLock()"));
-  assert.ok(main.includes('path.join(app.getPath("home"), `.${product.dataDirName}`)'));
-  assert.ok(!main.includes('".openmausbot"'));
-});
+}
 
 test("packaged startup with updates disabled loads no updater and schedules no network checks", () => {
   assert.equal(product.updateChannel, "disabled");

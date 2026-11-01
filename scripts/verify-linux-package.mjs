@@ -54,9 +54,7 @@ function requireExecutable(file) {
   }
 }
 
-// electron-updater picks its installer from resources/package-type ("deb" →
-// DebUpdater, absent → AppImageUpdater), and the app's updater reads the same
-// marker; a marker in both artifacts (or neither) silently inverts the routing.
+// electron-builder 26.15.3 writes package-type only when publish config enables auto-updates.
 function requirePackageType(resources, label, expected) {
   const marker = path.join(resources, "package-type");
   const found = statSync(marker, { throwIfNoEntry: false })?.isFile()
@@ -434,8 +432,7 @@ try {
   const debAppRoot = path.join(extracted, "opt", product.executableName);
   requireDirectoryMode(debAppRoot, 0o755);
   const debResources = path.join(debAppRoot, "resources");
-  // Routes the in-app updater to the package-manager hand-off.
-  requirePackageType(debResources, "DEB", "deb");
+  requirePackageType(debResources, "DEB", null);
   requireUpdatesDisabled(debResources, "DEB");
   const debHashes = verifyCuaResources(debResources, "DEB");
   const debCloudflaredHash = verifyCloudflaredResources(debResources, "DEB");
@@ -500,7 +497,6 @@ try {
     );
   }
   const appImageResources = path.join(squashRoot, "resources");
-  // No marker: the AppImage keeps the in-place restart-to-update path.
   requirePackageType(appImageResources, "AppImage", null);
   requireUpdatesDisabled(appImageResources, "AppImage");
   // Depending on the pinned appimagetool runtime, SquashFS directories are
