@@ -22,6 +22,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: node branding/generate.mjs --check
+      - run: node --test electron/rebrand.node-test.mjs
       - run: node scripts/check-fork-boundaries.mjs
       - run: pnpm exec vitest run scripts/check-fork-boundaries.test.mjs
       - run: node --test electron/sealbridge.node-test.mjs

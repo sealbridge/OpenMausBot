@@ -1,3 +1,4 @@
+import { product } from "./sealbridge/product.mjs";
 import skins from "./skin-overlay.cjs";
 import { createTalkPanel } from "./talk-panel.mjs";
 import { createTalkServer } from "./talk-server.mjs";
@@ -58,7 +59,7 @@ export function installTalk({ ipcMain, localOnly, localOrHome, BrowserWindow, ap
           panel,
           voiceInUse: () => speech.busy() || callPresence.active(),
           release: () => shortcut.releaseModifiers(),
-          openChat: chat => (chat ? openLink(`openmausbot://thread/${encodeURIComponent(chat.threadId)}?bot=${encodeURIComponent(chat.botId)}`) : reveal()),
+          openChat: chat => (chat ? openLink(`${product.urlScheme}://thread/${encodeURIComponent(chat.threadId)}?bot=${encodeURIComponent(chat.botId)}`) : reveal()),
         });
         shortcut = createTalkShortcut({ globalShortcut, prefs, available: () => appleSpeech && !remote() && !away(), onPress: logged("press", () => session.press()) });
       } catch (error) {

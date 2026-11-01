@@ -12,8 +12,10 @@ submit only work you have the right to contribute.
 
 The OpenMausBot and MausBot names and mascot are trademarks of Supamaus Software
 Private Limited. Apache-2.0 section 6 does not grant trademark rights. These are
-upstream attribution, and are not used for this product's branding. Remaining
-upstream interface strings and visual assets will be replaced in G2.
+upstream attribution, and are not used for this product's branding. The desktop shell and built-in avatar display use temporary Sealbridge artwork.
+Legacy interface strings, helper-bot names, external service references and
+unreferenced upstream artwork remain for a later product-surface review; see
+[branding scope](branding/README.md).
 
 Hosted workspaces are not supported in this distribution. Hosted routes retain
 their OSS refusal responses and existing local owner access is preserved. See

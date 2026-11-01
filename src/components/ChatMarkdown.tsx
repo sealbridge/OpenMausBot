@@ -1,3 +1,4 @@
+import product from "../../branding/product.json";
 // Security: model output never reaches the DOM as raw HTML (no rehype-raw); Shiki's output is generator-escaped.
 import { createContext, memo, use, useContext, useEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import Markdown, { defaultUrlTransform, type Components, type ExtraProps } from "react-markdown";
@@ -712,7 +713,7 @@ const MARKDOWN_COMPONENTS: Components = {
   },
 };
 
-const MAY_LINK_THREAD = /#|openmausbot/i;
+const mayLinkThread = (text: string) => text.includes("#") || text.toLowerCase().includes(`${product.urlScheme}://`);
 const NO_THREAD_REFS: ThreadRefsValue = { threads: [] };
 
 function ChatMarkdownComponent({ text, message, mentionPeers = NO_MENTION_PEERS, everyone = false, mentionPerson, delivered }: {
@@ -721,7 +722,7 @@ function ChatMarkdownComponent({ text, message, mentionPeers = NO_MENTION_PEERS,
   delivered?: DeliveredFiles;
 }) {
   // use() may be called conditionally: only a message that can hold a thread link subscribes to the thread list.
-  const { threads, currentBotId } = MAY_LINK_THREAD.test(text) ? use(ThreadRefsContext) : NO_THREAD_REFS;
+  const { threads, currentBotId } = mayLinkThread(text) ? use(ThreadRefsContext) : NO_THREAD_REFS;
   const { source, imageOffsets } = normalizeMessageMarkdown(text);
   const needsMath = normalizedSourceHasMath(source);
   const [katexReady, setKatexReady] = useState(() => katexPlugin !== null);

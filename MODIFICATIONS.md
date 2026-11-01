@@ -197,3 +197,116 @@ fixture in `server/hosted-models-api.test.ts`, and the boundary-checker copy in
 `scripts/packaged-native-modules.test.mjs`. The sync covers
 `88d54eb17..1f1e8f452` (22 changes taken; release-only change `43d3a84d1`
 skipped). Newer upstream commits are left for the next sync.
+
+## G2 rebrand foundation
+
+Desktop identity is sourced from `branding/product.json`, including the disabled
+update channel. Generated package/builder/web/speech mirrors are reproducible
+without dependencies and checked before packaging and in the contract workflow.
+Electron sets the product name, dedicated userData and Windows AppUserModelId
+before path consumers and the single-instance lock. Desktop protocol handlers
+and generated chat links use the fork's scheme. Server/CLI defaults use the
+dedicated data root; automatic import of the upstream legacy root is removed.
+Save-file validation, private-folder exclusion and document sync outputs follow
+the dedicated roots. Linux browser AppArmor and macOS speech helper identities
+are independent from the upstream application.
+
+Upstream publish configuration is removed. Packaged startup does not initialize
+the updater, download updates or schedule checks. Future distribution is planned
+for one stable channel, with signing and an owned feed required first. Public
+release workflows remain disabled; private packaging checks use the new names.
+
+The temporary slate/white SB artwork replaces active desktop/web icons and
+built-in normal/chrome/seasonal avatar display; upstream DMG artwork is disabled.
+PNG, SVG, ICO and ICNS generation and replacement instructions live in `branding/`.
+Legacy source illustration tools, helper names, locale strings, external service
+URLs, author metadata, npm workspace names and internal compatibility keys remain
+for later review. LICENSE and NOTICE remain byte-for-byte unchanged. See
+`branding/README.md` for scope and `docs/sealbridge/g2-verification.md` for evidence
+and unavailable checks. This change does not claim packaged OS or server workflow
+acceptance without the required dependencies and isolated runtime fixtures.
+
+Changed/added/deleted paths (upstream files and fork extensions):
+
+- `.github/workflows/package-linux.yml`
+- `.github/workflows/package-win.yml`
+- `.github/workflows/sealbridge-desktop-g0.yml`
+- `.gitignore`
+- `LICENSING.md`
+- `MODIFICATIONS.md`
+- `README.md`
+- `branding/README.md`
+- `branding/generate.mjs`
+- `branding/icons/icon.icns`
+- `branding/icons/icon.ico`
+- `branding/icons/icon.png`
+- `branding/icons/icon.svg`
+- `branding/product.json`
+- `build/icon-1024.png`
+- `build/icon.icns`
+- `build/icon.ico`
+- `build/icon.svg`
+- `build/linux-after-install.sh`
+- `build/linux-after-remove.sh`
+- `build/linux-openmausbot-browser.apparmor`
+- `build/linux-sealbridge-desktop-browser.apparmor`
+- `docs/sealbridge/g2-verification.md`
+- `electron-builder.yml`
+- `electron/build-speech-helper.mjs`
+- `electron/chat-link.mjs`
+- `electron/chat-link.node-test.mjs`
+- `electron/cloud-account.node-test.mjs`
+- `electron/cloud-buy.node-test.mjs`
+- `electron/cloud-entry.mjs`
+- `electron/cloud-entry.node-test.mjs`
+- `electron/cloud-sync.mjs`
+- `electron/cloud-sync.node-test.mjs`
+- `electron/environments.cjs`
+- `electron/environments.node-test.mjs`
+- `electron/error-pages.mjs`
+- `electron/main.mjs`
+- `electron/organization-entry.mjs`
+- `electron/organization-entry.node-test.mjs`
+- `electron/package-link.mjs`
+- `electron/package-link.node-test.mjs`
+- `electron/preload.node-test.mjs`
+- `electron/rebrand.node-test.mjs`
+- `electron/resources/app-icon.png`
+- `electron/resources/speech-helper-Info.plist`
+- `electron/save-file.mjs`
+- `electron/save-file.node-test.mjs`
+- `electron/sealbridge/product.mjs`
+- `electron/sealbridge/product.node-test.mjs`
+- `electron/speech.mjs`
+- `electron/startup-screen.mjs`
+- `electron/talk-main.mjs`
+- `electron/talk-main.node-test.mjs`
+- `electron/updater.mjs`
+- `electron/vendor/electron-updater.cjs`
+- `index.html`
+- `package.json`
+- `public/app-icon-192.png`
+- `public/app-icon-512.png`
+- `public/app-icon.svg`
+- `public/apple-touch-icon.png`
+- `public/manifest.webmanifest`
+- `scripts/clean.mjs`
+- `scripts/linux-after-install.test.mjs`
+- `scripts/patch-organization-updater.mjs`
+- `server/brand.ts`
+- `server/cli.ts`
+- `server/config.ts`
+- `shared/use-my-computer.ts`
+- `src/components/Avatar.tsx`
+- `src/components/ChatMarkdown.test.ts`
+- `src/components/ChatMarkdown.tsx`
+- `src/components/CursorAvatar.tsx`
+- `src/components/SidebarThreadRow.test.ts`
+- `src/components/ThreadRefs.test.ts`
+- `src/hooks/use-external-chat-links.test.ts`
+- `src/lib/brand.test.ts`
+- `src/lib/brand.ts`
+- `src/lib/page-open.test.ts`
+- `src/lib/thread-refs.test.ts`
+- `src/lib/thread-refs.ts`
+- `src/types/ogb.d.ts`

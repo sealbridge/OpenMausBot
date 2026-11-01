@@ -1,3 +1,4 @@
+import product from "../branding/product.json" with { type: "json" };
 // `openmausbot` on the command line: run the server anywhere and pair devices to it.
 //
 //   openmausbot setup [--data-dir ~/.openmausbot]
@@ -121,7 +122,7 @@ export function parseArgs(argv: string[], env: NodeJS.ProcessEnv = process.env):
   const options: CliOptions = {
     command: command === "--help" || command === "-h" ? "help" : (command as CliOptions["command"]),
     port: Number(env.OMB_PORT || 8799),
-    dataDir: env.OMB_DATA_DIR || join(homedir(), ".openmausbot"),
+    dataDir: env.OMB_DATA_DIR || join(homedir(), `.${product.dataDirName}`),
     tailscale: false,
     tunnel: false,
     client: false,
@@ -989,7 +990,7 @@ export async function runOnboardingCommand(
     }
     if (options.command === "setup") {
       io.log("\nAll set. Start with: openmausbot (or npx openmausbot without a global install).");
-      if (options.dataDir !== join(homedir(), ".openmausbot") || options.port !== 8799) {
+      if (options.dataDir !== join(homedir(), `.${product.dataDirName}`) || options.port !== 8799) {
         io.log(`Use the same --data-dir (${options.dataDir}) and --port (${options.port}) options when starting.`);
       }
       return 0;

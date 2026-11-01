@@ -1,3 +1,4 @@
+import { product } from "./sealbridge/product.mjs";
 // A real app bundle: macOS TCC reads the executable's bundle Info.plist and kills a loose binary that lacks one.
 import { execFileSync } from "node:child_process";
 import { copyFileSync, mkdirSync, rmSync } from "node:fs";
@@ -8,7 +9,7 @@ const electronDir = path.dirname(fileURLToPath(import.meta.url));
 const projectDir = path.dirname(electronDir);
 const resourcesDir = path.join(electronDir, "resources");
 
-export const speechHelperBundle = path.join(resourcesDir, "OpenMausBot Speech.app");
+export const speechHelperBundle = path.join(resourcesDir, `${product.productName} Speech.app`);
 export const speechHelperBinary = path.join(speechHelperBundle, "Contents", "MacOS", "speech-helper");
 
 export function buildSpeechHelper() {
