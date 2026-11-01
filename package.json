@@ -2,7 +2,7 @@
   "name": "sealbridge-desktop",
   "productName": "Sealbridge Desktop",
   "private": true,
-  "version": "0.1.136",
+  "version": "0.1.137",
   "description": "A local-first chat app for running a team of AI agents.",
   "homepage": "https://github.com/milind-soni/OpenMausBot",
   "repository": {
