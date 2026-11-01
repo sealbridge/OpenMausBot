@@ -1,5 +1,8 @@
 {
   "productName": "Sealbridge Desktop",
+  "packageName": "sealbridge-desktop",
+  "desktopName": "sealbridge-desktop.desktop",
+  "executableName": "sealbridge-desktop",
   "shortName": "Sealbridge",
   "appId": "dev.sealbridge.desktop",
   "urlScheme": "sealbridge",

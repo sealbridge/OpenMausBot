@@ -535,8 +535,10 @@ of its respective owner.
 ## Fork contract experiment (G0)
 
 The isolated modules and verification commands are documented in
-[the G0 contracts](docs/sealbridge/g0-contracts.md). Placeholder identity settings
-live in [branding/product.json](branding/product.json). G2 will connect that file
-to package.json, electron-builder configuration, existing brand modules and icons.
+[the G0 contracts](docs/sealbridge/g0-contracts.md). The final product name is
+**Sealbridge Desktop**. [branding/product.json](branding/product.json) defines its
+package identity, checked against package.json and electron-builder configuration
+by the G0 tests. G2 will connect the remaining brand modules and OS integration
+paths and update the visual assets.
 G3 will connect the prepared CLI/runtime to packaging and main-process startup.
 These integration steps are outside G0.

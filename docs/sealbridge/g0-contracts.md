@@ -3,12 +3,88 @@
 G0 adds isolated modules for product configuration, a supervised stdio MCP client,
 feature negotiation, a provisional main-process adapter, an identity-store contract,
 and a pinned CLI preparation experiment. It does not register IPC, launch from
-`main.mjs`, add screens, route URLs, or change the installed application's identity.
+`main.mjs`, add screens, or route URLs. G0 also sets the desktop package identity.
 
-`branding/product.json` is the identity source. Its product name and appId are
-placeholders pending a naming decision. `product.mjs` validates and freezes it.
-The CLI package name and version, relay, scheme, and data-directory name also come
-from this file. Existing application branding is unchanged.
+`branding/product.json` is the single source of truth for the final product name,
+**Sealbridge Desktop**, package name `sealbridge-desktop`, and appId
+`dev.sealbridge.desktop`, using the project's `sealbridge.dev` domain.
+`product.mjs` validates, copies and freezes the configuration. The CLI package
+name and version, relay, proposed scheme, and proposed data-directory name also
+come from this file; the last two are not wired into the existing application.
+
+## Package identity and remaining G2 work
+
+Package metadata mirrors the following fields. The node:test check in
+`electron/sealbridge/product.node-test.mjs` parses JSON and YAML and fails on any
+disagreement. It runs through `electron/sealbridge.node-test.mjs`, the existing
+Electron test entry, and the `sealbridge-desktop-g0` workflow. Edit product.json
+and its corresponding metadata together.
+
+| Product field | Value | Checked consumers |
+| --- | --- | --- |
+| `productName` | `Sealbridge Desktop` | package.json `productName`; electron-builder.yml `productName` and `linux.desktop.entry.Name`; the G0 adapter and MCP client read it directly |
+| `packageName` | `sealbridge-desktop` | package.json `name` |
+| `appId` | `dev.sealbridge.desktop` | electron-builder.yml `appId` |
+| `desktopName` | `sealbridge-desktop.desktop` | package.json `desktopName`; the builder's existing `linux.syncDesktopName: true` consumes it |
+| `executableName` | `sealbridge-desktop` | electron-builder.yml `linux.executableName`; macOS and Windows retain the builder's product-name defaults |
+
+Behavior changes from this metadata are intentional:
+
+- Electron prefers package.json `productName` over `name`. Its default userData
+  directory now ends in `Sealbridge Desktop`: `~/Library/Application Support/Sealbridge Desktop`
+  on macOS, `%APPDATA%/Sealbridge Desktop` on Windows, and
+  `${XDG_CONFIG_HOME:-~/.config}/Sealbridge Desktop` on Linux. Previously development
+  launches used `openmausbot` and packaged launches used `OpenMausBot`. Preferences,
+  encrypted credential records, browser/session state, and other files rooted at
+  `app.getPath("userData")` use the new directory. G0 does not copy or migrate them.
+  The server compile cache and the child's `OMB_USER_DATA` follow that path too.
+- Package-manager identity becomes `sealbridge-desktop`; the appId changes OS
+  bundle/installer identity. This is a separate package identity, with no upgrade
+  or prior-install migration claim.
+- The builder defaults produce `Sealbridge Desktop.app` on macOS and
+  `Sealbridge Desktop.exe` on Windows. Linux uses executable `sealbridge-desktop`,
+  DEB package name `sealbridge-desktop`, install root `/opt/Sealbridge Desktop`,
+  desktop file `sealbridge-desktop.desktop`, desktop Name `Sealbridge Desktop`,
+  and generated StartupWMClass `sealbridge-desktop`. Icon artwork stays unchanged;
+  the builder derives the installed Linux icon filename/key from the executable.
+
+The naming-consumer audit found no root-package `pnpm --filter openmausbot` or
+workspace dependency references. Filters for `@openmausbot/docs` and
+`@openmausbot/control-plane` address separate packages and stay unchanged.
+`scripts/release-ci.mjs` and `scripts/ci-scope.mjs` compare package metadata for
+version-only changes without requiring a particular name. Their test manifests
+use an independent fixture name. `scripts/build-npm-package.mjs` explicitly emits
+the separate upstream headless npm package; it does not inherit the root name.
+Native preparation scripts read root dependency pins, not its name.
+
+G2 still owns these integration points, which do not yet follow product.json:
+
+- URL registration remains `openmausbot` in the builder and main process. The
+  configured `sealbridge` scheme is only a G0 module value.
+- `electron/main.mjs` still calls `app.setDesktopName("com.openmausbot.app.desktop")`.
+  This differs from the newly generated desktop entry and needs G2 window/launcher
+  association verification. Main and `server/config.ts` still default conversation
+  and configuration storage to `~/.openmausbot` (or `OMB_DATA_DIR`), independent of
+  package identity. The configured `dataDirName` does not move that directory.
+- Renderer/server brand modules, HTML/web manifest, translations, helper names,
+  OS permission text, icons, mascot, DMG visuals, builder artifact names,
+  `nsis.shortcutName`, and Linux vendor text retain existing values. README's
+  upstream product and download sections also remain unchanged.
+- Installer hooks `build/linux-after-install.sh` and `build/linux-after-remove.sh`
+  and the AppArmor policy retain `/opt/OpenMausBot` and their existing policy names.
+  That root differs from the new builder install root; G0 packages are not ready
+  for installation verification. `scripts/after-pack.mjs` also retains the macOS
+  `OpenMausBot.app` fallback path and needs a G2 packaging adjustment.
+- `scripts/verify-linux-package.mjs`, `scripts/smoke-linux-package.mjs`,
+  `scripts/run-linux-package-smoke.mjs`, and `scripts/smoke-deb-upgrade.mjs` retain
+  upstream package/executable/desktop/install and userData assumptions. Linux and
+  Windows packaging/release workflows also retain upstream artifact and installed
+  path expectations. These require coordinated G2 updates with the installer
+  paths; G0 does not build or run them against renamed packages.
+- The updater publish owner/repo and release destinations remain unchanged.
+  Enterprise code remains a G1 concern.
+
+Code signing is out of scope for G0; this change performs no signing.
 
 ## Provisional adapter API
 
@@ -111,6 +187,7 @@ node --test electron/sealbridge/live.node-test.mjs
 pnpm test:electron
 pnpm lint
 pnpm typecheck
+pnpm i18n:check
 ```
 
 Preparation installs the configured CLI version into ignored
@@ -135,6 +212,19 @@ user data. Tests are included in the existing Electron test glob by
 and Windows on Node 24, then prepares the runtime and runs live negotiation.
 Actual OS storage and packaged Electron behavior are outside this verification.
 
+For the name follow-up on 2026-11-01, lint, typecheck and i18n checks passed,
+as did both product tests, including the package/builder consistency check.
+The related release, Linux CI, native preparation, after-pack, installer-fixture
+and server-config suites passed 338 tests with 9 skipped. A broader 12-file
+Vitest run passed 529 tests, skipped 9 and failed 57, including child-process
+`EPERM` errors. Additional Electron identity-consumer tests passed 33 and failed
+8 with child-process `EPERM` errors. The required G0 entry failed; a diagnostic
+run without test-runner process isolation passed 21 tests and failed 11. The
+original committed MCP host tests reproduced the same 10 host failures in a
+temporary checkout. The full Electron suite encountered failures and a Node
+assertion, then stalled and was interrupted. These runs do not establish a green
+full suite in this environment. All fixtures used disposable data.
+
 The published CLI declares Node `>=22`; this experiment uses Node 24. The plan's
 separate Node 22 bundling proposal remains open. `resolveRuntime` accepts a
 resolved Node binary and either a development directory or packaged
@@ -150,8 +240,9 @@ Confirm the supported bundled Node version, binary licensing, architectures,
 packaging size and nested signing requirements. No automatic delegation retry is
 permitted without a core replay/deduplication contract.
 
-G1 owns enterprise removal and its build boundaries. G2 consumes product.json for
-package/build identity, schemes, data paths, names and icons. G3 adds the explicit
+G1 owns enterprise removal and its build boundaries. G2 completes the remaining
+product.json integrations, schemes, data paths, names and icons listed above.
+G3 adds the explicit
 runtime preparation step to packaging and the runtime directory/Node binary to
 `extraResources`, validates packaged paths, wires lifecycle and limited IPC into
 main, and connects the agreed identity/approval providers. Later milestones own

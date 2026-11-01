@@ -1,5 +1,6 @@
 {
-  "name": "openmausbot",
+  "name": "sealbridge-desktop",
+  "productName": "Sealbridge Desktop",
   "private": true,
   "version": "0.1.136",
   "description": "A local-first chat app for running a team of AI agents.",
@@ -13,7 +14,7 @@
     "email": "46266943+milind-soni@users.noreply.github.com"
   },
   "license": "Apache-2.0",
-  "desktopName": "com.openmausbot.app.desktop",
+  "desktopName": "sealbridge-desktop.desktop",
   "type": "module",
   "main": "electron/main.mjs",
   "engines": {

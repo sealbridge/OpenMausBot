@@ -1,13 +1,16 @@
 import { readFileSync } from "node:fs";
 
 export function validateProduct(value) {
-  const fields = ["productName", "shortName", "appId", "urlScheme", "dataDirName", "cliPackage", "cliVersion", "defaultRelay"];
+  const fields = ["productName", "packageName", "desktopName", "executableName", "shortName", "appId", "urlScheme", "dataDirName", "cliPackage", "cliVersion", "defaultRelay"];
   if (!value || typeof value !== "object" || Array.isArray(value) ||
       fields.some(key => typeof value[key] !== "string" || !value[key].trim() || value[key] !== value[key].trim()) ||
       Object.keys(value).some(key => !fields.includes(key))) {
     throw new TypeError("Invalid product configuration");
   }
   if (!/^[a-z][a-z0-9]*(?:\.[a-z][a-z0-9-]*){2,}$/.test(value.appId) ||
+      !/^[a-z0-9][a-z0-9-]*$/.test(value.packageName) ||
+      !/^[a-z0-9][a-z0-9-]*\.desktop$/.test(value.desktopName) ||
+      !/^[a-z0-9][a-z0-9-]*$/.test(value.executableName) ||
       !/^[a-z][a-z0-9+.-]*$/.test(value.urlScheme) ||
       !/^[a-z0-9][a-z0-9-]*$/.test(value.dataDirName) ||
       !/^[a-z0-9][a-z0-9-]*$/.test(value.cliPackage) ||
