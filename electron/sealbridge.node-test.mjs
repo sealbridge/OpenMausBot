@@ -1,0 +1,8 @@
+import "./sealbridge/product.node-test.mjs";
+import "./sealbridge/capabilities.node-test.mjs";
+import "./sealbridge/redaction.node-test.mjs";
+import "./sealbridge/mcp-host.node-test.mjs";
+import "./sealbridge/adapter.node-test.mjs";
+import "./sealbridge/identity-store.node-test.mjs";
+import "./sealbridge/runtime.node-test.mjs";
+import "./sealbridge/live.node-test.mjs";

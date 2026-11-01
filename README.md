@@ -531,3 +531,12 @@ the corresponding notices, license texts, source locations, and SBOM are in
 OpenMausBot is an independent, open-source project inspired by Grok Bot. It is
 not affiliated with, endorsed by, or associated with xAI; "Grok" is a trademark
 of its respective owner.
+
+## Fork contract experiment (G0)
+
+The isolated modules and verification commands are documented in
+[the G0 contracts](docs/sealbridge/g0-contracts.md). Placeholder identity settings
+live in [branding/product.json](branding/product.json). G2 will connect that file
+to package.json, electron-builder configuration, existing brand modules and icons.
+G3 will connect the prepared CLI/runtime to packaging and main-process startup.
+These integration steps are outside G0.
