@@ -368,12 +368,14 @@ it("keeps the normal local provider settings editable", async () => {
   try {
     const response = await fetch(`${fixture.info.url}/api/config`);
     expect(response.status).toBe(200);
-    const config = await response.json() as { edition: unknown; defaultModelSelection?: unknown };
+    const config = await response.json() as { edition: unknown };
     expect(config.edition).toEqual({ edition: "oss", features: [] });
+    const settings = { openaiCompat: { url: "http://127.0.0.1:9/v1", model: "fixture-local-model" } };
     const update = await fetch(`${fixture.info.url}/api/config`, {
       method: "PUT", headers: { "content-type": "application/json", origin: fixture.info.url },
-      body: JSON.stringify({ defaultModelSelection: config.defaultModelSelection }),
+      body: JSON.stringify(settings),
     });
     expect(update.status).toBe(200);
+    expect(JSON.parse(readFileSync(join(fixture.info.dataDir, "config.json"), "utf8"))).toMatchObject(settings);
   } finally { console.info(JSON.stringify(fixture.info)); await fixture.close(); }
 }, 60_000);
