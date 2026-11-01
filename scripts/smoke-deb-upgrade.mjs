@@ -31,7 +31,7 @@ const temporary = fs.mkdtempSync(path.join(path.resolve(runnerTemp), "omb-deb-up
 if (path.dirname(temporary) !== path.resolve(runnerTemp)) fail("temporary fixture escaped RUNNER_TEMP");
 const legacyRoot = path.join(temporary, "legacy-package");
 const controlRoot = path.join(legacyRoot, "DEBIAN");
-const legacyApp = path.join(legacyRoot, "opt", product.productName);
+const legacyApp = path.join(legacyRoot, "opt", product.executableName);
 const legacyResources = path.join(legacyApp, "resources");
 const legacyDeb = path.join(temporary, `${product.packageName}_0.1.7_amd64.deb`);
 
@@ -58,7 +58,7 @@ try {
     stdio: "inherit",
   });
   execFileSync("dpkg", ["--install", legacyDeb], { stdio: "inherit" });
-  for (const directory of [`/opt/${product.productName}`, `/opt/${product.productName}/resources`]) {
+  for (const directory of [`/opt/${product.executableName}`, `/opt/${product.executableName}/resources`]) {
     const mode = fs.lstatSync(directory).mode & 0o777;
     if (mode !== 0o775) fail(`legacy fixture did not reproduce 0775 at ${directory}`);
   }
@@ -71,9 +71,9 @@ try {
     stdio: "inherit",
   });
   for (const directory of [
-    `/opt/${product.productName}`,
-    `/opt/${product.productName}/resources`,
-    `/opt/${product.productName}/resources/cua-linux-x64`,
+    `/opt/${product.executableName}`,
+    `/opt/${product.executableName}/resources`,
+    `/opt/${product.executableName}/resources/cua-linux-x64`,
   ]) {
     const details = fs.lstatSync(directory);
     if (!details.isDirectory() || details.isSymbolicLink()) fail(`unsafe upgraded directory: ${directory}`);
@@ -82,14 +82,14 @@ try {
     }
   }
   for (const executable of ["cua-driver", "cua-cursor-theme"]) {
-    const file = path.join(`/opt/${product.productName}/resources/cua-linux-x64`, executable);
+    const file = path.join(`/opt/${product.executableName}/resources/cua-linux-x64`, executable);
     const details = fs.lstatSync(file);
     if (!details.isFile() || details.isSymbolicLink()) fail(`unsafe upgraded executable: ${file}`);
     if (details.uid !== 0 || details.gid !== 0 || (details.mode & 0o777) !== 0o755) {
       fail(`upgraded executable is not root:root 0755: ${file}`);
     }
   }
-  const chromiumSandbox = `/opt/${product.productName}/chrome-sandbox`;
+  const chromiumSandbox = `/opt/${product.executableName}/chrome-sandbox`;
   const sandboxDetails = fs.lstatSync(chromiumSandbox);
   if (!sandboxDetails.isFile() || sandboxDetails.isSymbolicLink()) {
     fail(`unsafe upgraded Chromium sandbox: ${chromiumSandbox}`);

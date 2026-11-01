@@ -100,7 +100,7 @@ describe("service units", () => {
     expect(shippedSentinelCli("darwin", "/Users/maus", (path) => present.has(path))).toEqual({ node: `${app}/MacOS/Sealbridge Desktop`, script: `${app}/Resources/server/openmausbot.js` });
     const user = "/Users/maus/Applications/Sealbridge Desktop.app/Contents";
     expect(shippedSentinelCli("darwin", "/Users/maus", (path) => path.startsWith(user))?.script).toBe(`${user}/Resources/server/openmausbot.js`);
-    expect(shippedSentinelCli("linux", "/home/maus", (path) => path.startsWith("/opt/Sealbridge Desktop/"))).toEqual({ node: "/opt/Sealbridge Desktop/sealbridge-desktop", script: "/opt/Sealbridge Desktop/resources/server/openmausbot.js" });
+    expect(shippedSentinelCli("linux", "/home/maus", (path) => path.startsWith("/opt/sealbridge-desktop/"))).toEqual({ node: "/opt/sealbridge-desktop/sealbridge-desktop", script: "/opt/sealbridge-desktop/resources/server/openmausbot.js" });
     // an app with its script missing, or one released before Sentinel, is no CLI for it
     expect(shippedSentinelCli("darwin", "/Users/maus", (path) => path.endsWith("MacOS/Sealbridge Desktop"))).toBeNull();
     expect(shippedSentinelCli("darwin", "/Users/maus", (path) => present.has(path), () => false)).toBeNull();

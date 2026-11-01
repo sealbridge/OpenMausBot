@@ -433,7 +433,7 @@ for (const expected of [
 const extracted = mkdtempSync(path.join(tmpdir(), "omb-deb-verify-"));
 try {
   execFileSync("dpkg-deb", ["--extract", deb, extracted]);
-  const debAppRoot = path.join(extracted, "opt", product.productName);
+  const debAppRoot = path.join(extracted, "opt", product.executableName);
   requireDirectoryMode(debAppRoot, 0o755);
   const debResources = path.join(debAppRoot, "resources");
   // Routes the in-app updater to the package-manager hand-off.
@@ -470,7 +470,7 @@ try {
   const desktop = readFileSync(desktopFile, "utf8");
   for (const expected of [
     `Name=${product.productName}`,
-    `Exec="/opt/${product.productName}/${product.executableName}" %U`,
+    `Exec=/opt/${product.executableName}/${product.executableName} %U`,
     `Icon=${product.executableName}`,
     `StartupWMClass=${product.desktopName.replace(/\.desktop$/, "")}`,
     "Categories=Utility;",

@@ -84,8 +84,8 @@ jobs:
           test "$(stat -c '%U:%G %a' release/linux-unpacked/chrome-sandbox)" = "root:root 4755"
       - name: Verify the installed browser with Ubuntu sandbox restrictions
         run: |
-          product_name=$(node -p "require('./branding/product.json').productName")
-          node scripts/smoke-browser-bundle.mjs --resources "/opt/${product_name}/resources"
+          executable_name=$(node -p "require('./branding/product.json').executableName")
+          node scripts/smoke-browser-bundle.mjs --resources "/opt/${executable_name}/resources"
       - name: Launch packaged app and verify lifecycle
         env:
           OMB_KEEP_SMOKE_DIR: "1"

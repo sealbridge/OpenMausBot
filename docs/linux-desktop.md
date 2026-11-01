@@ -102,6 +102,7 @@ The app checks for updates in the background and downloads them by itself. Nothi
 ### Bundled bot browser on Ubuntu 24.04
 
 The desktop packages include the browser engine and browser runtime; no separate browser download is needed.
+The `.deb` installs under `/opt/sealbridge-desktop`; its desktop display name is **Sealbridge Desktop**.
 Use the **`.deb` package** for browser-ready installation on Ubuntu 24.04. Its installer secures the browser's
 package-owned files and loads an AppArmor rule for that exact executable. The browser sandbox stays enabled,
 and the machine-wide user-namespace restriction is unchanged. Upgrades refresh the same rule; uninstalling
@@ -241,7 +242,7 @@ pnpm smoke:linux-package
 The verifier checks `.deb` metadata, desktop identity, the exact dormant Cua resource tree and provenance,
 SquashFS/DEB directory modes, runtime path policy, and matching binary hashes across all artifacts. The local smoke
 launches the unpacked app and AppImage without `--no-sandbox`; CI first reproduces a `0.1.7` in-place DEB upgrade and
-then runs the same smoke against `/opt/OpenMausBot/openmausbot`. These lanes prove the embedded server and UI are
+then runs the same smoke against `/opt/sealbridge-desktop/sealbridge-desktop`. These lanes prove the embedded server and UI are
 usable while an optional Composio broker stalls, verify that an old local-control opt-in is cleared, and assert that
 no Cua executable starts on Xorg or simulated Wayland. Low-level runtime tests retain the future private-daemon
 contract without activating it in a packaged app. Only a real-seat acceptance matrix can authorize re-enablement.

@@ -22,11 +22,11 @@ and its corresponding metadata and checked shell literals together.
 
 | Product field | Value | Checked consumers |
 | --- | --- | --- |
-| `productName` | `Sealbridge Desktop` | package.json `productName`; builder product/desktop names and NSIS shortcut; installer/AppArmor root; package smokes, macOS resource fallback, Windows checks and shipped Sentinel CLI paths; G0 adapter and MCP client |
+| `productName` | `Sealbridge Desktop` | package.json `productName`; builder product/desktop names and NSIS shortcut; macOS resource fallback, Windows checks and shipped macOS Sentinel CLI paths; G0 adapter and MCP client |
 | `packageName` | `sealbridge-desktop` | package.json `name`; DEB metadata, upgrade fixture, install-command smoke and workflow cleanup |
 | `appId` | `dev.sealbridge.desktop` | electron-builder.yml `appId`; embedded CUA host, descriptor checks and smokes |
 | `desktopName` | `sealbridge-desktop.desktop` | package.json `desktopName`; builder `linux.syncDesktopName: true`; main-process desktop name, autostart filename and package smokes |
-| `executableName` | `sealbridge-desktop` | builder `linux.executableName`; Linux launcher/removal, package smokes and shipped Sentinel CLI; macOS and Windows retain the builder's product-name defaults |
+| `executableName` | `sealbridge-desktop` | builder `linux.executableName` and Linux install directory; Linux launcher/removal, AppArmor paths, package smokes, CI resource paths and shipped Sentinel CLI; macOS and Windows retain the builder's product-name defaults |
 
 Behavior changes from this metadata are intentional:
 
@@ -43,10 +43,29 @@ Behavior changes from this metadata are intentional:
   or prior-install migration claim.
 - The builder defaults produce `Sealbridge Desktop.app` on macOS and
   `Sealbridge Desktop.exe` on Windows. Linux uses executable `sealbridge-desktop`,
-  DEB package name `sealbridge-desktop`, install root `/opt/Sealbridge Desktop`,
+  DEB package name `sealbridge-desktop`, install root `/opt/sealbridge-desktop`,
   desktop file `sealbridge-desktop.desktop`, desktop Name `Sealbridge Desktop`,
   and generated StartupWMClass `sealbridge-desktop`. Icon artwork stays unchanged;
   the builder derives the installed Linux icon filename/key from the executable.
+
+Linux package commands use `scripts/package-linux.mjs` and electron-builder's
+`platformPackagerFactory` API. In app-builder-lib 26.15.3, `FpmTarget.build`
+hardcodes `/opt/${appInfo.sanitizedProductName}`; `linux.executableName` only
+sets `productFilename` and the executable, and no DEB/RPM install-directory
+option exists. The factory sets only the Linux packager's `sanitizedProductName`
+to the validated `executableName` before targets generate their paths and
+templates. Display names and packaged `productName` stay `Sealbridge Desktop`.
+Use the package commands rather than invoking `electron-builder --linux` directly.
+
+This avoids [Electron's setuid sandbox path bug](https://github.com/electron/electron/issues/44414).
+Chromium's [`SetuidSandboxHost::PrependWrapper`](https://github.com/chromium/chromium/blob/main/sandbox/linux/suid/client/setuid_sandbox_host.cc)
+passes the unquoted helper path to
+[`CommandLine::PrependWrapper`](https://github.com/chromium/chromium/blob/main/base/command_line.cc),
+which tokenizes on spaces. With user namespaces restricted on Ubuntu 24.04,
+`/opt/Sealbridge Desktop/chrome-sandbox` becomes executable `/opt/Sealbridge`,
+and the zygote launch aborts. The smoke harness uses an argument array, and
+the builder's launcher and shell templates quote paths correctly. Sandbox
+permissions and the machine's namespace restrictions remain unchanged.
 
 The naming-consumer audit found no root-package `pnpm --filter openmausbot` or
 workspace dependency references. Filters for `@openmausbot/docs` and
@@ -62,8 +81,10 @@ package verification and smokes, macOS resource lookup, Windows executable check
 NSIS shortcuts, main-process desktop association, embedded CUA host appId, Linux
 autostart and installed Sentinel CLI discovery. The builder includes `branding/product.json` in the app
 archive for runtime consumers. The consistency test also checks the quoted literal
-Linux hook paths and AppArmor attachment, and generates a desktop entry with the
-installed electron-builder to verify its Exec, icon key and window class.
+Linux hook paths and AppArmor attachment, generates a desktop entry with the
+installed electron-builder to verify its Exec, icon key and window class, and
+captures real DEB/RPM target arguments and generated launcher/AppArmor templates
+in a temporary fixture to verify the install directory and preserved display name.
 
 The AppArmor resource filename and profile name remain `openmausbot-browser`;
 only the quoted executable attachment changes. `OPENMAUSBOT_POSTINSTALL_TEST_ROOT`

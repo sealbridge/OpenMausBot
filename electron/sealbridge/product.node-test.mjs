@@ -1,10 +1,30 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import test from "node:test";
 import { createRequire } from "node:module";
 import vm from "node:vm";
 import { parse } from "yaml";
 import { product, validateProduct } from "./product.mjs";
+import { linuxPackagerFactory } from "../../scripts/package-linux.mjs";
+
+const require = createRequire(import.meta.url);
+const builderRequire = createRequire(require.resolve("electron-builder"));
+const { Platform } = builderRequire("app-builder-lib");
+const { LinuxTargetHelper } = builderRequire("app-builder-lib/out/targets/LinuxTargetHelper.js");
+const read = file => readFileSync(new URL(`../../${file}`, import.meta.url), "utf8");
+
+function linuxPackager(config = parse(read("electron-builder.yml")), options = {}, extra = {}) {
+  return linuxPackagerFactory({
+    config,
+    metadata: JSON.parse(read("package.json")),
+    options,
+    framework: { name: "electron" },
+    projectDir: path.resolve(import.meta.dirname, "../.."),
+    ...extra,
+  }, Platform.LINUX);
+}
 
 test("product configuration is validated, copied and frozen", () => {
   assert.ok(Object.isFrozen(product));
@@ -14,7 +34,7 @@ test("product configuration is validated, copied and frozen", () => {
   source.shortName = "changed";
   assert.equal(copy.shortName, product.shortName);
   for (const change of [{ appId: "plain" }, { packageName: "Bad Name" }, { desktopName: "../app.desktop" },
-    { executableName: "../escape" }, { dataDirName: "../escape" }, { cliVersion: "latest" },
+    { executableName: "../escape" }, { executableName: "Sealbridge Desktop" }, { dataDirName: "../escape" }, { cliVersion: "latest" },
     { urlScheme: "Bad:" }, { defaultRelay: "http://localhost" }, { defaultRelay: "https://user:pass@example.test" },
     { defaultRelay: "https://example.test/#fragment" }, { productName: "" }, { extra: "field" }]) {
     assert.throws(() => validateProduct({ ...product, ...change }));
@@ -35,6 +55,9 @@ test("package and builder identity match branding/product.json", () => {
   assert.equal(builder.productName, product.productName, "electron-builder.yml productName");
   assert.equal(builder.linux.executableName, product.executableName, "electron-builder.yml linux.executableName");
   assert.equal(builder.linux.desktop.entry.Name, product.productName, "electron-builder.yml linux.desktop.entry.Name");
+  for (const name of ["package:linux", "package:linux:offline", "package:linux:dir"]) {
+    assert.ok(pkg.scripts[name].includes("node scripts/package-linux.mjs"), name);
+  }
 });
 
 test("literal Linux install and removal paths match the product configuration", () => {
@@ -42,7 +65,7 @@ test("literal Linux install and removal paths match the product configuration", 
   const install = read("build/linux-after-install.sh");
   const remove = read("build/linux-after-remove.sh");
   const policy = read("build/linux-openmausbot-browser.apparmor");
-  const appRoot = `/opt/${product.productName}`;
+  const appRoot = `/opt/${product.executableName}`;
   const executable = `${appRoot}/${product.executableName}`;
   assert.ok(install.includes(`APP_ROOT="${appRoot}"`));
   assert.ok(remove.includes(`update-alternatives --remove ${product.executableName} "${executable}"`));
@@ -63,23 +86,12 @@ test("literal Linux install and removal paths match the product configuration", 
 });
 
 test("builder desktop entry and main use the same launcher identity", async () => {
-  const require = createRequire(import.meta.url);
-  const builderRequire = createRequire(require.resolve("electron-builder"));
   assert.equal(require("../cua-linux-runtime.cjs").HOST_BUNDLE_ID, product.appId, "embedded Linux host appId");
-  const { LinuxTargetHelper } = builderRequire("app-builder-lib/out/targets/LinuxTargetHelper.js");
-  const read = file => readFileSync(new URL(`../../${file}`, import.meta.url), "utf8");
   const config = parse(read("electron-builder.yml"));
-  const helper = new LinuxTargetHelper({
-    config,
-    info: { metadata: JSON.parse(read("package.json")) },
-    appInfo: { productName: product.productName, sanitizedProductName: product.productName },
-    platformSpecificBuildOptions: config.linux,
-    executableName: config.linux.executableName,
-    fileAssociations: [],
-  });
+  const helper = new LinuxTargetHelper(linuxPackager(config));
   assert.equal(`${helper.getDesktopFileName()}.desktop`, product.desktopName);
   const desktop = await helper.computeDesktopEntry(config.linux);
-  for (const line of [`Name=${product.productName}`, `Exec="/opt/${product.productName}/${product.executableName}" %U`,
+  for (const line of [`Name=${product.productName}`, `Exec=/opt/${product.executableName}/${product.executableName} %U`,
     `Icon=${product.executableName}`, `StartupWMClass=${product.desktopName.replace(/\.desktop$/, "")}`]) {
     assert.ok(desktop.split("\n").includes(line), line);
   }
@@ -90,4 +102,43 @@ test("builder desktop entry and main use the same launcher identity", async () =
   const names = [];
   vm.runInNewContext(call, { app: { setDesktopName: name => names.push(name) }, product });
   assert.deepEqual(names, [product.desktopName]);
+});
+
+test("Linux FPM targets use a space-free root while preserving product metadata", async t => {
+  const directory = mkdtempSync(path.join(tmpdir(), "sealbridge-package-layout-"));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const appOutDir = path.join(directory, "linux-unpacked");
+  mkdirSync(path.join(appOutDir, "resources"), { recursive: true });
+  let sequence = 0;
+  const tempDirManager = { getTempFile: async ({ suffix }) => path.join(directory, `${sequence++}-${suffix}`) };
+  const appRoot = `/opt/${product.executableName}`;
+  for (const name of ["deb", "rpm"]) {
+    const config = parse(read("electron-builder.yml"));
+    config.publish = null;
+    config[name] = { ...config[name], afterInstall: null, afterRemove: null };
+    let captured;
+    const packager = linuxPackager(config, {
+      effectiveOptionComputed: async args => { captured = args; return true; },
+    }, { tempDirManager, emitArtifactBuildStarted: async () => {} });
+    assert.equal(packager.appInfo.productName, product.productName);
+    assert.equal(packager.info.metadata.productName, product.productName);
+    assert.equal(packager.appInfo.productFilename, product.executableName);
+    const targets = [];
+    packager.createTargets([name], (_, factory) => targets.push(factory(directory)));
+    const [target] = targets;
+    Object.defineProperties(target.helper, { icons: { value: [] }, mimeTypeFiles: { value: null } });
+    await target.build(appOutDir, 1);
+    const [args, desktopFile] = captured;
+    assert.ok(args.includes(`${appOutDir}/=${appRoot}`), `${name} install mapping`);
+    assert.ok(readFileSync(desktopFile, "utf8").includes(`Name=${product.productName}\n`));
+    assert.ok(readFileSync(desktopFile, "utf8").includes(`Exec=${appRoot}/${product.executableName} %U\n`));
+    for (const flag of ["--after-install", "--after-remove"]) {
+      const script = readFileSync(args[args.indexOf(flag) + 1], "utf8");
+      assert.ok(script.includes(`'${appRoot}/${product.executableName}'`), `${name} ${flag} launcher`);
+      assert.ok(!script.includes(`/opt/${product.productName}`));
+    }
+    const policy = readFileSync(path.join(appOutDir, "resources/apparmor-profile"), "utf8");
+    assert.ok(policy.includes(`"${appRoot}/${product.executableName}"`), `${name} Electron AppArmor attachment`);
+  }
+  assert.throws(() => linuxPackagerFactory({}, Platform.MAC), /Linux platform/);
 });

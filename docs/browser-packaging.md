@@ -241,7 +241,7 @@ There is no recording control in OMB's browser panel.
 ## Linux sandbox
 
 Use the `.deb` on Ubuntu 24.04. Its package hooks install a narrowly scoped
-AppArmor policy for the root-owned browser executable under `/opt/OpenMausBot`.
+AppArmor policy for the root-owned browser executable under `/opt/sealbridge-desktop`.
 They do not disable the browser sandbox or change the global user-namespace
 restriction. See [Linux desktop](linux-desktop.md).
 
@@ -267,7 +267,7 @@ node scripts/smoke-browser-bundle.mjs --resources /absolute/app/resources
 
 On macOS, use `/absolute/OpenMausBot.app/Contents/Resources`. On Linux, run as
 an unprivileged user against the installed `.deb` at
-`/opt/OpenMausBot/resources`. This check creates its own empty home and local
+`/opt/sealbridge-desktop/resources`. This check creates its own empty home and local
 web page, checks automatic discovery, navigation, typing/clicking, the
 loopback command relay the server reads, pictures and types through
 (`server/browser-relay.ts`), screenshot delivery and two-bot cookie/storage

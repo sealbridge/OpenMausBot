@@ -69,7 +69,7 @@ const installed = inContainer(
     prepare,
     command,
     'dpkg-query -W -f="INSTALLED=\\${Version} \\${db:Status-Abbrev}\\n" ' + product.packageName,
-    `test -x "/opt/${product.productName}/${product.executableName}" && echo "EXECUTABLE=yes"`,
+    `test -x "/opt/${product.executableName}/${product.executableName}" && echo "EXECUTABLE=yes"`,
   ].join("\n"),
 );
 

@@ -31,8 +31,8 @@ fi
 # remove an unrelated file that now happens to use the same command name.
 if [ "$TEST_MODE" -eq 0 ]; then
   if command -v update-alternatives >/dev/null 2>&1; then
-    update-alternatives --remove sealbridge-desktop "/opt/Sealbridge Desktop/sealbridge-desktop"
-  elif [ -L /usr/bin/sealbridge-desktop ] && [ "$(readlink /usr/bin/sealbridge-desktop)" = "/opt/Sealbridge Desktop/sealbridge-desktop" ]; then
+    update-alternatives --remove sealbridge-desktop "/opt/sealbridge-desktop/sealbridge-desktop"
+  elif [ -L /usr/bin/sealbridge-desktop ] && [ "$(readlink /usr/bin/sealbridge-desktop)" = "/opt/sealbridge-desktop/sealbridge-desktop" ]; then
     rm -- /usr/bin/sealbridge-desktop
   fi
 fi

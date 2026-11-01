@@ -100,8 +100,8 @@ On Windows, use the installed `OpenMausBot.exe` as `command`, the adjacent
 `resources\\server\\mcp-server.js` as the argument, and the same `ELECTRON_RUN_AS_NODE=1` environment value.
 The usual per-user install is under `%LOCALAPPDATA%\\Programs\\OpenMausBot`.
 
-On Ubuntu `.deb` installs, the executable is normally `/opt/OpenMausBot/openmausbot` and the script is
-`/opt/OpenMausBot/resources/server/mcp-server.js`. Use the same environment value.
+On Ubuntu `.deb` installs, the executable is normally `/opt/sealbridge-desktop/sealbridge-desktop` and the script is
+`/opt/sealbridge-desktop/resources/server/mcp-server.js`. Use the same environment value.
 
 ## Connection discovery
 
