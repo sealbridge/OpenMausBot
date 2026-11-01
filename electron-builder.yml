@@ -46,6 +46,7 @@ files:
   - "!electron/resources/OpenMausBot Recorder.app/**"
   - "!**/node_modules/**"
   - package.json
+  - branding/product.json
 
 asar: true
 
@@ -191,7 +192,7 @@ win:
 nsis:
   oneClick: true
   perMachine: false
-  shortcutName: OpenMausBot
+  shortcutName: ${productName}
   # Versioned, like the .dmg. The README's /latest/download/ button needs a
   # STABLE filename, so ship a second copy named OpenMausBot-setup.exe on the
   # release — the same trick as OpenMausBot.dmg beside OpenMausBot-${version}.dmg.

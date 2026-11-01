@@ -18,15 +18,15 @@ Package metadata mirrors the following fields. The node:test check in
 `electron/sealbridge/product.node-test.mjs` parses JSON and YAML and fails on any
 disagreement. It runs through `electron/sealbridge.node-test.mjs`, the existing
 Electron test entry, and the `sealbridge-desktop-g0` workflow. Edit product.json
-and its corresponding metadata together.
+and its corresponding metadata and checked shell literals together.
 
 | Product field | Value | Checked consumers |
 | --- | --- | --- |
-| `productName` | `Sealbridge Desktop` | package.json `productName`; electron-builder.yml `productName` and `linux.desktop.entry.Name`; the G0 adapter and MCP client read it directly |
-| `packageName` | `sealbridge-desktop` | package.json `name` |
-| `appId` | `dev.sealbridge.desktop` | electron-builder.yml `appId` |
-| `desktopName` | `sealbridge-desktop.desktop` | package.json `desktopName`; the builder's existing `linux.syncDesktopName: true` consumes it |
-| `executableName` | `sealbridge-desktop` | electron-builder.yml `linux.executableName`; macOS and Windows retain the builder's product-name defaults |
+| `productName` | `Sealbridge Desktop` | package.json `productName`; builder product/desktop names and NSIS shortcut; installer/AppArmor root; package smokes, macOS resource fallback, Windows checks and shipped Sentinel CLI paths; G0 adapter and MCP client |
+| `packageName` | `sealbridge-desktop` | package.json `name`; DEB metadata, upgrade fixture, install-command smoke and workflow cleanup |
+| `appId` | `dev.sealbridge.desktop` | electron-builder.yml `appId`; embedded CUA host, descriptor checks and smokes |
+| `desktopName` | `sealbridge-desktop.desktop` | package.json `desktopName`; builder `linux.syncDesktopName: true`; main-process desktop name, autostart filename and package smokes |
+| `executableName` | `sealbridge-desktop` | builder `linux.executableName`; Linux launcher/removal, package smokes and shipped Sentinel CLI; macOS and Windows retain the builder's product-name defaults |
 
 Behavior changes from this metadata are intentional:
 
@@ -57,32 +57,37 @@ use an independent fixture name. `scripts/build-npm-package.mjs` explicitly emit
 the separate upstream headless npm package; it does not inherit the root name.
 Native preparation scripts read root dependency pins, not its name.
 
+Packaging paths now follow this identity through Linux install/removal hooks,
+package verification and smokes, macOS resource lookup, Windows executable checks,
+NSIS shortcuts, main-process desktop association, embedded CUA host appId, Linux
+autostart and installed Sentinel CLI discovery. The builder includes `branding/product.json` in the app
+archive for runtime consumers. The consistency test also checks the quoted literal
+Linux hook paths and AppArmor attachment, and generates a desktop entry with the
+installed electron-builder to verify its Exec, icon key and window class.
+
+The AppArmor resource filename and profile name remain `openmausbot-browser`;
+only the quoted executable attachment changes. `OPENMAUSBOT_POSTINSTALL_TEST_ROOT`
+and other `OPENMAUSBOT_*` / `OMB_*` environment hooks retain their names for
+compatibility. The DEB upgrade smoke uses an older-version fixture of the new
+package identity to exercise preserved directory modes; it does not migrate an
+installed upstream package. Full installed-package and platform smokes still need
+the corresponding built artifacts and supported runners.
+
 G2 still owns these integration points, which do not yet follow product.json:
 
 - URL registration remains `openmausbot` in the builder and main process. The
   configured `sealbridge` scheme is only a G0 module value.
-- `electron/main.mjs` still calls `app.setDesktopName("com.openmausbot.app.desktop")`.
-  This differs from the newly generated desktop entry and needs G2 window/launcher
-  association verification. Main and `server/config.ts` still default conversation
-  and configuration storage to `~/.openmausbot` (or `OMB_DATA_DIR`), independent of
-  package identity. The configured `dataDirName` does not move that directory.
+- Main and `server/config.ts` still default conversation and configuration storage
+  to `~/.openmausbot` (or `OMB_DATA_DIR`), independent of package identity. The
+  configured `dataDirName` does not move that directory.
 - Renderer/server brand modules, HTML/web manifest, translations, helper names,
-  OS permission text, icons, mascot, DMG visuals, builder artifact names,
-  `nsis.shortcutName`, and Linux vendor text retain existing values. README's
-  upstream product and download sections also remain unchanged.
-- Installer hooks `build/linux-after-install.sh` and `build/linux-after-remove.sh`
-  and the AppArmor policy retain `/opt/OpenMausBot` and their existing policy names.
-  That root differs from the new builder install root; G0 packages are not ready
-  for installation verification. `scripts/after-pack.mjs` also retains the macOS
-  `OpenMausBot.app` fallback path and needs a G2 packaging adjustment.
-- `scripts/verify-linux-package.mjs`, `scripts/smoke-linux-package.mjs`,
-  `scripts/run-linux-package-smoke.mjs`, and `scripts/smoke-deb-upgrade.mjs` retain
-  upstream package/executable/desktop/install and userData assumptions. Linux and
-  Windows packaging/release workflows also retain upstream artifact and installed
-  path expectations. These require coordinated G2 updates with the installer
-  paths; G0 does not build or run them against renamed packages.
-- The updater publish owner/repo and release destinations remain unchanged.
-  Enterprise code remains a G1 concern.
+  OS permission text, icons, mascot, DMG visuals, builder artifact names and Linux
+  vendor text retain existing values. Other cosmetic labels, including login-item
+  display text, remain unchanged. README's upstream product and download sections
+  also remain unchanged.
+- The updater publish owner/repo, feed and release destinations remain unchanged.
+  Release workflow changes only resolve built and installed paths; artifact names
+  and publishing behavior remain unchanged. Enterprise code remains a G1 concern.
 
 Code signing is out of scope for G0; this change performs no signing.
 

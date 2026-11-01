@@ -12,7 +12,7 @@ const browserPolicy = path.join(root, "build", "linux-openmausbot-browser.apparm
 const temporaryDirectories = [];
 
 function fixture() {
-  const appRoot = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), "omb-deb-upgrade-"));
+  const appRoot = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), "omb-deb-upgrade with spaces-"));
   temporaryDirectories.push(appRoot);
   const resources = path.join(appRoot, "resources");
   const cuaRoot = path.join(resources, "cua-linux-x64");
@@ -72,7 +72,7 @@ afterEach(() => {
 describe("Linux DEB sandbox policy", () => {
   it("allows user namespaces only for the exact installed browser executable", () => {
     const policy = fs.readFileSync(browserPolicy, "utf8").replace(/^\s*#.*$/gm, "");
-    expect(policy).toContain("profile openmausbot-browser /opt/OpenMausBot/resources/browser-engine/chrome/chrome-headless-shell-linux64/chrome-headless-shell flags=(unconfined)");
+    expect(policy).toContain("profile openmausbot-browser \"/opt/Sealbridge Desktop/resources/browser-engine/chrome/chrome-headless-shell-linux64/chrome-headless-shell\" flags=(unconfined)");
     expect(policy).toContain("userns,");
     expect(policy).not.toMatch(/\*|@\{HOME\}|\/home\/|\/tmp\//);
   });

@@ -190,7 +190,8 @@ jobs:
 
       - name: "Gate: both packaged apps use the canonical updater feed"
         run: |
-          for app in release/mac-arm64/OpenMausBot.app release/mac/OpenMausBot.app; do
+          product_name=$(node -p "require('./branding/product.json').productName")
+          for app in "release/mac-arm64/${product_name}.app" "release/mac/${product_name}.app"; do
             update="$app/Contents/Resources/app-update.yml"
             test -f "$update" || { echo "::error::missing $update"; exit 1; }
             grep -Eq '^owner: milind-soni$' "$update" || { echo "::error::wrong update owner in $update"; exit 1; }
@@ -199,7 +200,8 @@ jobs:
 
       - name: "Gate: the signature must verify BEFORE notarization"
         run: |
-          for app in release/mac-arm64/OpenMausBot.app release/mac/OpenMausBot.app; do
+          product_name=$(node -p "require('./branding/product.json').productName")
+          for app in "release/mac-arm64/${product_name}.app" "release/mac/${product_name}.app"; do
             codesign --verify --deep --strict "$app"
             bin="$app/Contents/Resources/cloudflared/cloudflared"
             test -x "$bin" || { echo "::error::missing executable $bin"; exit 1; }
@@ -223,9 +225,10 @@ jobs:
 
       - name: "Gate: signed native browser works with an empty home"
         run: |
+          product_name=$(node -p "require('./branding/product.json').productName")
           case "$(node -p process.arch)" in
-            arm64) resources="$PWD/release/mac-arm64/OpenMausBot.app/Contents/Resources" ;;
-            x64) resources="$PWD/release/mac/OpenMausBot.app/Contents/Resources" ;;
+            arm64) resources="$PWD/release/mac-arm64/${product_name}.app/Contents/Resources" ;;
+            x64) resources="$PWD/release/mac/${product_name}.app/Contents/Resources" ;;
             *) exit 1 ;;
           esac
           node scripts/smoke-browser-bundle.mjs --resources "$resources"
@@ -233,7 +236,8 @@ jobs:
 
       - name: "Gate: both packaged servers start and every helper path resolves"
         run: |
-          for app in release/mac-arm64/OpenMausBot.app release/mac/OpenMausBot.app; do
+          product_name=$(node -p "require('./branding/product.json').productName")
+          for app in "release/mac-arm64/${product_name}.app" "release/mac/${product_name}.app"; do
             res="$app/Contents/Resources"
             # the server tree is plain JS — runnable on the runner's node
             # regardless of the app binary's arch
@@ -291,14 +295,15 @@ jobs:
 
       - name: Staple, re-zip, regenerate blockmaps and the feed
         run: |
+          product_name=$(node -p "require('./branding/product.json').productName")
           xcrun stapler staple release/OpenMausBot-*-arm64.dmg
           xcrun stapler staple release/OpenMausBot-*-x64.dmg
-          xcrun stapler staple release/mac-arm64/OpenMausBot.app
-          xcrun stapler staple release/mac/OpenMausBot.app
+          xcrun stapler staple "release/mac-arm64/${product_name}.app"
+          xcrun stapler staple "release/mac/${product_name}.app"
           v=$(node -p "require('./package.json').version")
           rm -f "release/OpenMausBot-$v-arm64.zip" "release/OpenMausBot-$v-x64.zip"
-          ditto -c -k --sequesterRsrc --keepParent release/mac-arm64/OpenMausBot.app "release/OpenMausBot-$v-arm64.zip"
-          ditto -c -k --sequesterRsrc --keepParent release/mac/OpenMausBot.app "release/OpenMausBot-$v-x64.zip"
+          ditto -c -k --sequesterRsrc --keepParent "release/mac-arm64/${product_name}.app" "release/OpenMausBot-$v-arm64.zip"
+          ditto -c -k --sequesterRsrc --keepParent "release/mac/${product_name}.app" "release/OpenMausBot-$v-x64.zip"
           node scripts/regenerate-blockmaps.mjs \
             "release/OpenMausBot-$v-arm64.zip" "release/OpenMausBot-$v-x64.zip" \
             "release/OpenMausBot-$v-arm64.dmg" "release/OpenMausBot-$v-x64.dmg"
@@ -354,6 +359,8 @@ jobs:
         shell: bash
         run: |
           res=release/win-unpacked/resources
+          product_name=$(node -p "require('./branding/product.json').productName")
+          test -f "release/win-unpacked/${product_name}.exe" || { echo "::error::missing packaged app executable"; exit 1; }
           [ -f "$res/server/index.js" ] || { echo "::error::missing server/index.js"; exit 1; }
           [ -f "$res/server/desktop-entry.mjs" ] || { echo "::error::missing server/desktop-entry.mjs"; exit 1; }
           node scripts/check-module-scopes.mjs "$res"
@@ -455,13 +462,17 @@ jobs:
           sudo chmod 4755 release/linux-unpacked/chrome-sandbox
           test "$(stat -c '%U:%G %a' release/linux-unpacked/chrome-sandbox)" = "root:root 4755"
       - name: "Gate: installed browser works with Ubuntu sandbox restrictions"
-        run: node scripts/smoke-browser-bundle.mjs --resources /opt/OpenMausBot/resources
+        run: |
+          product_name=$(node -p "require('./branding/product.json').productName")
+          node scripts/smoke-browser-bundle.mjs --resources "/opt/${product_name}/resources"
       - name: "Gate: packaged Linux server discovers its browser"
-        env:
-          OMB_SMOKE_DIST: /opt/OpenMausBot/resources/server
-        run: node scripts/smoke-packaged-server.mjs --browser-bundle /opt/OpenMausBot/resources/browser-engine
+        run: |
+          product_name=$(node -p "require('./branding/product.json').productName")
+          OMB_SMOKE_DIST="/opt/${product_name}/resources/server" node scripts/smoke-packaged-server.mjs --browser-bundle "/opt/${product_name}/resources/browser-engine"
       - name: "Gate: packaged server and phone helper load as ES modules"
-        run: node scripts/check-module-scopes.mjs /opt/OpenMausBot/resources
+        run: |
+          product_name=$(node -p "require('./branding/product.json').productName")
+          node scripts/check-module-scopes.mjs "/opt/${product_name}/resources"
       - name: Smoke the packages
         env:
           OMB_KEEP_SMOKE_DIR: "1"
@@ -469,7 +480,9 @@ jobs:
         run: pnpm smoke:linux-package
       - name: Remove the installed upgrade fixture
         if: always()
-        run: sudo dpkg --purge openmausbot || true
+        run: |
+          package_name=$(node -p "require('./branding/product.json').packageName")
+          sudo dpkg --purge "$package_name" || true
       - name: Stable-named copies and checksums
         run: |
           v=$(node -p "require('./package.json').version")

@@ -1,3 +1,4 @@
+import { product } from "./sealbridge/product.mjs";
 // Whether this computer's apps and screen are lent to the person's own Clouds, and what the icon's menu says when they
 // aren't: read from computer control's own state on Windows, macOS and Linux.
 import assert from "node:assert/strict";
@@ -11,7 +12,7 @@ import { driverFailure } from "./cua-failure.mjs";
 
 const embedded = (extra = {}) => ({
   mode: "embedded", socketPath: "\\\\.\\pipe\\cua-driver-1234", mcpCommand: "C:\\Program Files\\OpenMausBot\\resources\\cua-driver.exe",
-  mcpArgs: ["mcp", "--embedded", "--socket", "\\\\.\\pipe\\cua-driver-1234"], mcpEnv: { CUA_DRIVER_EMBEDDED: "1", CUA_DRIVER_HOST_BUNDLE_ID: "com.openmausbot.app" }, ...extra,
+  mcpArgs: ["mcp", "--embedded", "--socket", "\\\\.\\pipe\\cua-driver-1234"], mcpEnv: { CUA_DRIVER_EMBEDDED: "1", CUA_DRIVER_HOST_BUNDLE_ID: product.appId }, ...extra,
 });
 
 test("a PC lends its apps and screen once its own embedded computer control runs, and never through another driver", () => {

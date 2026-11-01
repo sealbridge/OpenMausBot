@@ -1,3 +1,4 @@
+import { product } from "../electron/sealbridge/product.mjs";
 // Windows lend smoke: computer control starts as the installed app starts it, then a Cloud takes its first look at
 // this PC through the lend path, both in Electron's main process. Run after `pnpm build:cua:win`. It reads the
 // screen's size and the list of apps and sends no input. On a pull request (GITHUB_BASE_REF) it runs the base branch's
@@ -29,9 +30,9 @@ for (const { from } of resources) {
 }
 
 const work = mkdtempSync(join(tmpdir(), "omb-cua-lend-"));
-const installed = join(work, "OpenMausBot");
+const installed = join(work, product.productName);
 cpSync(dirname(createRequire(import.meta.url)("electron")), installed, { recursive: true });
-renameSync(join(installed, "electron.exe"), join(installed, "OpenMausBot.exe"));
+renameSync(join(installed, "electron.exe"), join(installed, `${product.productName}.exe`));
 for (const { from, to } of resources) cpSync(join(root, from), join(installed, "resources", to), { recursive: true });
 
 /** One smoke of the electron/ modules under `code`, in a data folder of its own; its exit code once it reported. */
@@ -44,7 +45,7 @@ async function lendSmoke(label, code) {
   delete env.CUA_DRIVER_PATH;
   delete env.ELECTRON_RUN_AS_NODE;
   console.log(`--- ${label}`);
-  const child = spawn(join(installed, "OpenMausBot.exe"), [join(root, "scripts", "smoke-cua-win-lend.electron.cjs")], {
+  const child = spawn(join(installed, `${product.productName}.exe`), [join(root, "scripts", "smoke-cua-win-lend.electron.cjs")], {
     env, stdio: ["ignore", "inherit", "inherit"], windowsHide: true,
   });
   const watchdog = setTimeout(() => {

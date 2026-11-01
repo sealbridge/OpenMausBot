@@ -83,7 +83,9 @@ jobs:
           sudo chmod 4755 release/linux-unpacked/chrome-sandbox
           test "$(stat -c '%U:%G %a' release/linux-unpacked/chrome-sandbox)" = "root:root 4755"
       - name: Verify the installed browser with Ubuntu sandbox restrictions
-        run: node scripts/smoke-browser-bundle.mjs --resources /opt/OpenMausBot/resources
+        run: |
+          product_name=$(node -p "require('./branding/product.json').productName")
+          node scripts/smoke-browser-bundle.mjs --resources "/opt/${product_name}/resources"
       - name: Launch packaged app and verify lifecycle
         env:
           OMB_KEEP_SMOKE_DIR: "1"
@@ -91,7 +93,9 @@ jobs:
         run: pnpm smoke:linux-package
       - name: Remove the installed upgrade fixture
         if: always()
-        run: sudo dpkg --purge openmausbot || true
+        run: |
+          package_name=$(node -p "require('./branding/product.json').packageName")
+          sudo dpkg --purge "$package_name" || true
       - name: Prepare release assets
         id: release
         shell: bash

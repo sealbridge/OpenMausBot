@@ -8,6 +8,7 @@
 // settings and installs the app, so it runs only on a GitHub Windows runner.
 //
 //   node scripts/defender-check-win.mjs --installer release/OpenMausBot-<version>-setup.exe --out <folder> [--wait 120]
+import { product } from "../electron/sealbridge/product.mjs";
 import { execFile, execFileSync, spawn } from "node:child_process";
 import { appendFileSync, copyFileSync, existsSync, mkdirSync, openSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -31,12 +32,12 @@ mkdirSync(SCRIPTS, { recursive: true });
 const WAIT_SECONDS = Math.max(10, Number(options.wait) || 120);
 const DEVTOOLS_PORT = 9339;
 const STARTED = new Date();
-const APP = "OpenMausBot.exe";
+const APP = `${product.productName}.exe`;
 const DRIVER = "cua-driver-background.exe";
 const DEFENDER_EVENTS = [1006, 1007, 1008, 1015, 1116, 1117];
 const MPCMDRUN = path.join(process.env.ProgramFiles ?? "C:\\Program Files", "Windows Defender", "MpCmdRun.exe");
 /** The app's own files: a detection naming one of these is about us, anything else is the machine's. */
-const OURS = /openmausbot|cua-driver|cua_driver|cua-sdk/i;
+const OURS = new RegExp(`${product.productName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}|${product.packageName}|openmausbot|cua-driver|cua_driver|cua-sdk`, "i");
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const quote = (value) => `'${String(value).replaceAll("'", "''")}'`;
@@ -287,7 +288,7 @@ if (-not $exited) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyCon
 
 const installedFiles = (folder) => ps(String.raw`
 $root = ${quote(folder)}
-$names = @('OpenMausBot.exe', 'resources\cua-driver-background.exe', 'resources\cua-driver.exe')
+$names = @(${quote(APP)}, 'resources\cua-driver-background.exe', 'resources\cua-driver.exe')
 $sdk = Join-Path $root 'resources\cua-sdk'
 if (Test-Path -LiteralPath $sdk) {
   $names += @(Get-ChildItem -LiteralPath $sdk -Recurse -File | Where-Object { $_.Extension -in '.exe', '.node', '.dll' } | ForEach-Object { $_.FullName.Substring($root.Length + 1) })
@@ -424,7 +425,7 @@ async function pressStart() {
 }
 
 function appLog() {
-  const folder = path.join(process.env.APPDATA ?? "", "OpenMausBot", "logs");
+  const folder = path.join(process.env.APPDATA ?? "", product.productName, "logs");
   const file = path.join(folder, "server.log");
   if (!existsSync(file)) return { file, present: false, lines: [] };
   for (const name of readdirSync(folder)) {

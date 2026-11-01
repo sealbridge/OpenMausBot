@@ -63,6 +63,8 @@ jobs:
         shell: bash
         run: |
           res=release/win-unpacked/resources
+          product_name=$(node -p "require('./branding/product.json').productName")
+          test -f "release/win-unpacked/${product_name}.exe" || { echo "::error::missing packaged app executable"; exit 1; }
           fail=0
           # missing → utilityProcess.fork fails → the 🐭 "Couldn't start the
           # bot server" page

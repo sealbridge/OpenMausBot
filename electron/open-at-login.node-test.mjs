@@ -1,3 +1,4 @@
+import { product } from "./sealbridge/product.mjs";
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
@@ -67,7 +68,7 @@ test("Windows: the person's item has a name of its own, apart from lending's hid
 test("Linux: the person's autostart entry has no hidden flag and no lending mark, and lending never removes it", async t => {
   const dir = await temp(t);
   const config = path.join(dir, "config");
-  const entry = path.join(config, "autostart", "openmausbot.desktop");
+  const entry = path.join(config, "autostart", product.desktopName);
   const login = createOpenAtLogin({ app: fakeApp(), file: path.join(dir, "linux.json"), platform: "linux", home: dir, env: { XDG_CONFIG_HOME: config, APPIMAGE: "/home/me/OpenMausBot.AppImage" } });
   login.choose(true);
   assert.equal(await readFile(entry, "utf8"), autostartEntry("/home/me/OpenMausBot.AppImage", { lending: false }));

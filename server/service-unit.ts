@@ -1,3 +1,4 @@
+import product from "../branding/product.json" with { type: "json" };
 import { homedir, userInfo } from "node:os";
 import { posix } from "node:path";
 
@@ -148,10 +149,10 @@ export function shippedSentinelCli(
   platform: NodeJS.Platform, home: string, exists: (path: string) => boolean, hasSentinel: (script: string) => boolean = () => true,
 ): { node: string; script: string } | null {
   const candidates = platform === "darwin"
-    ? ["/Applications/OpenMausBot.app", join(home, "Applications", "OpenMausBot.app")].map((app) => ({
-      node: join(app, "Contents", "MacOS", "OpenMausBot"), script: join(app, "Contents", "Resources", "server", "openmausbot.js"),
+    ? [join("/Applications", `${product.productName}.app`), join(home, "Applications", `${product.productName}.app`)].map((app) => ({
+      node: join(app, "Contents", "MacOS", product.productName), script: join(app, "Contents", "Resources", "server", "openmausbot.js"),
     }))
-    : platform === "linux" ? [{ node: "/opt/OpenMausBot/openmausbot", script: "/opt/OpenMausBot/resources/server/openmausbot.js" }] : [];
+    : platform === "linux" ? [{ node: join("/opt", product.productName, product.executableName), script: join("/opt", product.productName, "resources/server/openmausbot.js") }] : [];
   return candidates.find((cli) => exists(cli.node) && exists(cli.script) && hasSentinel(cli.script)) ?? null;
 }
 

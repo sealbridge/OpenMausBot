@@ -1,5 +1,6 @@
 // Read-only end-to-end smoke for the staged, packaged CUA path: native SDK
 // host -> private embedded daemon -> official stdio MCP proxy -> desktop frame.
+import { product } from "../electron/sealbridge/product.mjs";
 import { spawn } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -14,7 +15,7 @@ process.env.CUA_DRIVER_RS_TELEMETRY_ENABLED = "0";
 const sdk = pathToFileURL(join(resources, "cua-sdk/cua-sdk.mjs")).href;
 const binary = join(resources, "cua-driver");
 const { EmbeddedCuaDriverHost } = await import(sdk);
-const host = new EmbeddedCuaDriverHost(binary, "com.openmausbot.app");
+const host = new EmbeddedCuaDriverHost(binary, product.appId);
 let proxy;
 
 try {
@@ -24,7 +25,7 @@ try {
       ...process.env,
       ...Object.fromEntries(connection.mcp.environment.map(({ name, value }) => [name, value])),
       CUA_DRIVER_EMBEDDED: "1",
-      CUA_DRIVER_HOST_BUNDLE_ID: "com.openmausbot.app",
+      CUA_DRIVER_HOST_BUNDLE_ID: product.appId,
       CUA_DRIVER_RS_TELEMETRY_ENABLED: "0",
     },
     stdio: ["pipe", "pipe", "pipe"],

@@ -2,6 +2,7 @@
 // again after a restart without anyone opening it. Only a login item this app added for lending is ever removed, and
 // only such a launch starts hidden: one the person set up themselves, here or in the system's settings, opens the window.
 import fs from "node:fs";
+import { product } from "./sealbridge/product.mjs";
 import path from "node:path";
 
 export const HIDDEN_ARG = "--omb-hidden";
@@ -23,7 +24,7 @@ export function autostartEntry(exec, { lending = true } = {}) {
  * `chosen()` and `choose(on)`: the person's own login item, which opens the window and which lending never removes.
  */
 export function createOpenAtLogin({ app, file, platform = process.platform, env = process.env, home, argv = process.argv, execPath = process.execPath }) {
-  const autostart = path.join(env.XDG_CONFIG_HOME || path.join(home, ".config"), "autostart", "openmausbot.desktop");
+  const autostart = path.join(env.XDG_CONFIG_HOME || path.join(home, ".config"), "autostart", product.desktopName);
   const added = () => { try { return JSON.parse(fs.readFileSync(file, "utf8")).added === true; } catch { return false; } };
   const remember = (value) => { try { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, JSON.stringify({ added: value })); } catch {} };
   const ours = () => { try { return fs.readFileSync(autostart, "utf8").includes(MARK); } catch { return false; } };
