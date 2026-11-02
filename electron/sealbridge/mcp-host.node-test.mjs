@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { McpHost, sanitizedEnvironment } from "./mcp-host.mjs";
+import { fixtureRuntime } from "./fixtures/runtime.mjs";
 import { product } from "./product.mjs";
 
 async function fixture(t, mode = "normal", options = {}) {
@@ -107,24 +108,28 @@ test("post-start framing failures notify once; intentional shutdown does not not
   assert.equal(exits, 1);
 });
 
-test("service recovers a real child after a post-start framing failure", async t => {
+test("service recovers a real child after a post-start framing failure", { timeout: 10000 }, async t => {
   const { createCoreService } = await import("./service.mjs");
   const hosts = [];
-  const service = createCoreService({ backoffMs: 10, hostFactory(options) {
+  const recovered = Promise.withResolvers();
+  const service = createCoreService({ runtimeDir: await fixtureRuntime(t), backoffMs: 10, hostFactory(options) {
     const host = { async start() {
       const child = await fixture(t, "normal", options);
       hosts.push(child);
       options.onIdentity("did:key:fixture");
-      return child.start();
+      const result = await child.start();
+      if (hosts.length === 2) recovered.resolve();
+      return result;
     }, async close() { await hosts.at(-1)?.close(); } };
     return host;
   } });
   t.after(() => service.close());
-  await service.start();
-  await assert.rejects(hosts[0].request("fixture/garbage"));
+  assert.equal((await service.start()).state, "ready");
+  assert.equal(hosts.length, 1);
+  await assert.rejects(hosts[0].request("fixture/garbage"), { code: "SEALBRIDGE_FRAME_INVALID" });
   assert.equal(service.status().state, "restarting");
-  const deadline = Date.now() + 2000;
-  while (service.status().state !== "ready" && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 10));
+  await recovered.promise;
+  await service.start();
   assert.equal(service.status().state, "ready");
   assert.equal(hosts.length, 2);
 });
