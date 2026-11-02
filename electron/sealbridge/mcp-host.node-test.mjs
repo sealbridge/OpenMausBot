@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { McpHost, sanitizedEnvironment } from "./mcp-host.mjs";
+import { fixtureRuntime } from "./fixtures/runtime.mjs";
 import { product } from "./product.mjs";
 
 async function fixture(t, mode = "normal", options = {}) {
@@ -11,7 +12,7 @@ async function fixture(t, mode = "normal", options = {}) {
   const cliEntry = path.join(dir, "fake-mcp-server.mjs");
   await copyFile(new URL("./fixtures/fake-mcp-server.mjs", import.meta.url), cliEntry);
   await writeFile(path.join(dir, "fixture.json"), JSON.stringify({ mode, urlScheme: product.urlScheme }));
-  const host = new McpHost({ cliEntry, timeoutMs: 1500, shutdownMs: 50, ...options });
+  const host = new McpHost({ timeoutMs: 1500, shutdownMs: 50, ...options, cliEntry });
   t.after(async () => { await host.close(); await rm(dir, { recursive: true, force: true }); });
   return host;
 }
@@ -92,4 +93,43 @@ test("missing entry and oversized outgoing frames terminate without exposing raw
   await missing.close();
   assert.throws(() => new McpHost({ cliEntry: "relative.js" }));
   assert.throws(() => new McpHost({ cliEntry: path.resolve("cli.js"), nodeBinary: path.resolve("node.cmd") }));
+});
+
+test("post-start framing failures notify once; intentional shutdown does not notify", async t => {
+  let exits = 0;
+  const host = await fixture(t, "normal", { onExit() { exits++; } });
+  await host.start();
+  await assert.rejects(host.request("fixture/garbage"), { code: "SEALBRIDGE_FRAME_INVALID" });
+  await host.close();
+  assert.equal(exits, 1);
+  const normal = await fixture(t, "normal", { onExit() { exits++; } });
+  await normal.start();
+  await normal.close();
+  assert.equal(exits, 1);
+});
+
+test("service recovers a real child after a post-start framing failure", { timeout: 10000 }, async t => {
+  const { createCoreService } = await import("./service.mjs");
+  const hosts = [];
+  const recovered = Promise.withResolvers();
+  const service = createCoreService({ runtimeDir: await fixtureRuntime(t), backoffMs: 10, hostFactory(options) {
+    const host = { async start() {
+      const child = await fixture(t, "normal", options);
+      hosts.push(child);
+      options.onIdentity("did:key:fixture");
+      const result = await child.start();
+      if (hosts.length === 2) recovered.resolve();
+      return result;
+    }, async close() { await hosts.at(-1)?.close(); } };
+    return host;
+  } });
+  t.after(() => service.close());
+  assert.equal((await service.start()).state, "ready");
+  assert.equal(hosts.length, 1);
+  await assert.rejects(hosts[0].request("fixture/garbage"), { code: "SEALBRIDGE_FRAME_INVALID" });
+  assert.equal(service.status().state, "restarting");
+  await recovered.promise;
+  await service.start();
+  assert.equal(service.status().state, "ready");
+  assert.equal(hosts.length, 2);
 });

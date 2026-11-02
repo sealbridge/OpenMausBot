@@ -1,3 +1,4 @@
+import { SealbridgeStatusRow } from "./SealbridgeStatusRow";
 import { useEffect, useRef, useState } from "react";
 import { Archive, ChartNoAxesColumn, Cloud, CloudDownload, Coins, Download, FlaskConical, KeyRound, LockKeyhole, Monitor, Palette, ScrollText, Search, Settings, Sparkles, TabletSmartphone, Terminal, User, Users, X, Building2, Zap, BookOpen } from "lucide-react";
 import { useStore, type AppSettingsSection } from "@/state/store";
@@ -360,6 +361,7 @@ export function SettingsModal() {
             <PinnedPanelsSettings />
 
             {!remoteActive && <ReplayTourRow />}
+            <SealbridgeStatusRow />
             <UpdatesRow />
             <DiagnosticsRow />
           </>

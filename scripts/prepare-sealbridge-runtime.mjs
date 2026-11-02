@@ -1,14 +1,20 @@
+import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { realpathSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, cp, rm } from "node:fs/promises";
 import path from "node:path";
-import { product } from "../electron/sealbridge/product.mjs";
 import { developmentRuntimeDir, resolveRuntime } from "../electron/sealbridge/runtime.mjs";
 
+const provenance = JSON.parse(await readFile(new URL("../vendor/sealbridge/provenance.json", import.meta.url), "utf8"));
+for (const [file, expected] of [["source.tar.gz", provenance.sourceSha256], ["sealbridge-0.2.2.tgz", provenance.packageSha256]]) {
+  const bytes = await readFile(new URL(`../vendor/sealbridge/${file}`, import.meta.url));
+  if (createHash("sha256").update(bytes).digest("hex") !== expected) throw new Error("Core archive integrity mismatch");
+}
 const runtimeDir = developmentRuntimeDir;
 await mkdir(runtimeDir, { recursive: true });
-await writeFile(path.join(runtimeDir, "package.json"), JSON.stringify({ private: true, dependencies: { [product.cliPackage]: product.cliVersion } }, null, 2) + "\n");
+const installDir = path.resolve("runtime/sealbridge");
 const require = createRequire(import.meta.url);
 const candidates = [
   path.join(path.dirname(process.execPath), "node_modules/npm/bin/npm-cli.js"),
@@ -26,11 +32,26 @@ for (const candidate of candidates) {
   } catch { /* npm layouts vary by Node distribution. */ }
 }
 if (!entry) throw new Error("Cannot resolve npm CLI JavaScript entry for this Node installation");
-await new Promise((resolve, reject) => {
-  const child = spawn(process.execPath, [entry, "install", "--ignore-scripts", "--omit=dev", "--no-audit", "--no-fund", "--prefix", runtimeDir], {
-    shell: false, windowsHide: true, stdio: "inherit",
+const architectures = process.argv.includes("--all-architectures")
+  ? [...new Set(["x64", "arm64", process.arch])] : [process.arch];
+for (const arch of architectures) {
+  await new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [entry, "ci", "--cpu", arch, "--os", process.platform, "--ignore-scripts", "--omit=dev", "--no-audit", "--no-fund", "--prefix", installDir], {
+      shell: false, windowsHide: true, stdio: "inherit",
+    });
+    child.once("error", reject);
+    child.once("exit", code => code === 0 ? resolve() : reject(new Error("Pinned CLI installation failed")));
   });
-  child.once("error", reject);
-  child.once("exit", code => code === 0 ? resolve() : reject(new Error("Pinned CLI installation failed")));
-});
+  const target = path.resolve(`build/sealbridge-runtime-${arch}`);
+  await rm(target, { recursive: true, force: true });
+  await cp(installDir, target, { recursive: true });
+  for (const name of ["bootstrap.mjs", "core-child.mjs"]) {
+    await cp(new URL(`../electron/sealbridge/${name}`, import.meta.url), path.join(target, name));
+  }
+  await cp(new URL("../vendor/sealbridge/provenance.json", import.meta.url), path.join(target, "provenance.json"));
+  if (arch === process.arch) {
+    await rm(runtimeDir, { recursive: true, force: true });
+    await cp(target, runtimeDir, { recursive: true });
+  }
+}
 console.log(resolveRuntime({ runtimeDir }).cliEntry);

@@ -1,4 +1,5 @@
 import "./sealbridge/app-identity.mjs";
+import { startDesktopCore } from "./sealbridge/desktop-core.mjs";
 import { app, autoUpdater as nativeAutoUpdater, BrowserWindow, Tray, WebContentsView, clipboard, desktopCapturer, dialog, globalShortcut, ipcMain, Menu, nativeImage, Notification, powerMonitor, powerSaveBlocker, safeStorage, screen, session, shell, systemPreferences, utilityProcess, nativeTheme } from "electron";
 import { createRequire } from "node:module";
 import { randomBytes, randomUUID } from "node:crypto";
@@ -2882,8 +2883,9 @@ setCuaStateListener((connection) => {
     console.error("[desktop] capability broadcast failed:", error);
   });
 });
-
+let sealbridgeCore;
 app.whenReady().then(async () => {
+  sealbridgeCore = startDesktopCore({ app, ipcMain, localOnly });
   await evictStartupCacheOnce({
     userData: app.getPath("userData"),
     currentVersion: app.getVersion(),
@@ -3215,6 +3217,7 @@ app.on("before-quit", (e) => {
     new Promise((resolve) => setTimeout(resolve, CUA_STOP_TIMEOUT_MS).unref()),
   ]);
   const cleanup = Promise.all([
+    sealbridgeCore?.close(),
     ownedHelperCleanup,
     stoppingServer.then((stopped) => {
       if (!stopped) slog("server child did not stop before desktop exit; retaining the data-directory lease");

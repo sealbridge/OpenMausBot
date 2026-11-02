@@ -21,7 +21,7 @@ test("live pinned CLI initializes and lists tools without relay access", { skip:
   const capabilities = negotiateCapabilities(initialize, catalog);
   assert.equal(capabilities.serverVersion, product.cliVersion);
   assert.equal(capabilities.protocolVersion, "2024-11-05");
-  assert.equal(capabilities.tools.length, 7);
+  assert.equal(capabilities.tools.length, 11);
   assert.equal(capabilities.features.hostApproval, false);
   await host.close();
   assert.equal(host.running, false);

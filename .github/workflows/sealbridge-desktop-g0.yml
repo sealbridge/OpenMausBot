@@ -25,7 +25,9 @@ jobs:
       - run: node branding/generate.mjs --check
       - run: node --test electron/rebrand.node-test.mjs
       - run: node scripts/check-fork-boundaries.mjs
-      - run: pnpm exec vitest run scripts/check-fork-boundaries.test.mjs
-      - run: node --test electron/sealbridge.node-test.mjs
+      - run: pnpm exec vitest run scripts/check-fork-boundaries.test.mjs src/components/SealbridgeStatusRow.test.ts
       - run: node scripts/prepare-sealbridge-runtime.mjs
-      - run: node --test electron/sealbridge/live.node-test.mjs
+      - run: node --test electron/sealbridge.node-test.mjs electron/sealbridge/bootstrap.node-test.mjs electron/sealbridge/service.node-test.mjs
+      - run: pnpm exec electron --test electron/sealbridge/bootstrap.node-test.mjs
+        env:
+          ELECTRON_RUN_AS_NODE: "1"
