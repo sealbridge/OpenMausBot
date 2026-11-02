@@ -1,3 +1,4 @@
+import { redactInviteText } from "./sealbridge/invite-secrets.mjs";
 // The bundle is pasted into public issues: the collector never reads secrets, and everything is scrubbed again here.
 import fs from "node:fs";
 import path from "node:path";
@@ -74,7 +75,7 @@ const unquote = (value) => value.replace(/^["']|["']$/g, "");
 const VALUE_PART = String.raw`("[^"]*"|'[^']*'|[^\s"',;)\]}]+)`;
 
 export function redactSecretsInLine(line) {
-  let out = String(line ?? "");
+  let out = redactInviteText(line ?? "");
   // Updater errors include signed redirect URLs: keep host and path, never userinfo, query or fragment.
   out = out.replace(/\bhttps?:\/\/[^\s"'<>]+/gi, (url) => {
     const query = url.search(/[?#]/);

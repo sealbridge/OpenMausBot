@@ -169,8 +169,19 @@ test("a Cloud link arriving before React subscriptions is delivered exactly once
 
 test("Sealbridge bridge forwards only fixed status and retry operations", async () => {
   const before = invocations.length;
-  assert.deepEqual(Object.keys(exposed.api.sealbridge).sort(), ["retry", "status"]);
+  assert.deepEqual(Object.keys(exposed.api.sealbridge).sort(), ["inviteDecision", "invites", "pasteInvite", "retry", "status"]);
   await exposed.api.sealbridge.status({ privateKey: "fixture-only" });
   await exposed.api.sealbridge.retry("arbitrary-tool");
   assert.deepEqual(invocations.slice(before), [["sealbridge:status"], ["sealbridge:retry"]]);
+});
+
+test("invitation preload accepts only opaque decision IDs and fixed choices", async () => {
+  const before = invocations.length;
+  await exposed.api.sealbridge.inviteDecision("acp-invite:G4_DUMMY_SECRET", "confirm");
+  await exposed.api.sealbridge.inviteDecision("11111111-1111-1111-1111-111111111111", "trusted");
+  assert.equal(invocations.length, before);
+  await exposed.api.sealbridge.invites("acp-invite:G4_DUMMY_SECRET");
+  await exposed.api.sealbridge.pasteInvite("acp-invite:G4_DUMMY_SECRET");
+  await exposed.api.sealbridge.inviteDecision("11111111-1111-1111-1111-111111111111", "cancel");
+  assert.deepEqual(invocations.slice(before), [["sealbridge:invites"], ["sealbridge:invite-paste"], ["sealbridge:invite-decision", "11111111-1111-1111-1111-111111111111", "cancel"]]);
 });

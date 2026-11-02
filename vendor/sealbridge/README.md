@@ -1,7 +1,7 @@
 # Bundled core
 
 Upstream source: https://github.com/sealbridge/sealbridge, commit
-`4569f736ebb2099211bb81ddf3a5eec65dd345c1` (upstream version `0.2.2`).
+`0afeba0d90ca18e5f0bc3176fd62d9ca247f6b3f` (upstream version `0.2.2`).
 The registry's `0.2.2` predates the required key-store contracts, so the desktop
 installs the archived package here, never a registry package with the same version.
 `provenance.json` records SHA-256 hashes; the preparation script verifies both
@@ -40,3 +40,8 @@ package. Runtime dependencies carry their own license files. Public release
 workflows remain disabled. Native keychain access, signing and packaged startup
 still need acceptance on supported OS installations; automated tests use an
 isolated encrypted fake keyring and never access an existing OS credential.
+
+The invitation adapter uses core InviteStore.open/import/remove with keychain selection.
+Raw credentials enter a one-shot child through stdin only. Confirmation uses the
+core connectionsCommand confirm-invite with a saved reference after desktop human
+confirmation; it creates limited consent and does not grant task execution.

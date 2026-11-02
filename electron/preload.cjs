@@ -128,6 +128,10 @@ const bridge = {
   /** This app's version, and whether this page is this app's own (served by this computer, not a server from the Server menu). */
   app: { version: appVersion, ownPage: isLocalPage },
   sealbridge: {
+    invites: () => ipcRenderer.invoke("sealbridge:invites"),
+    inviteDecision: (id, decision) => typeof id === "string" && /^[a-f0-9-]{36}$/.test(id) && ["confirm", "cancel"].includes(decision)
+      ? ipcRenderer.invoke("sealbridge:invite-decision", id, decision) : Promise.resolve({ ok: false }),
+    pasteInvite: () => ipcRenderer.invoke("sealbridge:invite-paste"),
     status: () => ipcRenderer.invoke("sealbridge:status"),
     retry: () => ipcRenderer.invoke("sealbridge:retry"),
   },
