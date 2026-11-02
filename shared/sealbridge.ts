@@ -22,4 +22,5 @@ export interface SealbridgeInvite {
   displayName?: string;
   peerDid?: string;
   expiresAt?: string;
+  warnings?: ("same-name-different-did" | "identity-changed")[];
 }

@@ -7,6 +7,7 @@ import path from "node:path";
 import { createInviteQueue, captureInviteLinks, parseInviteLink } from "./invite-router.mjs";
 import { createDesktopInvites, registerInviteIpc } from "./invites.mjs";
 import { createInviteProcess } from "./invite-process.mjs";
+import { revealLinkWindow } from "./link-window.mjs";
 import { redact } from "./redaction.mjs";
 import { formatDesktopCrashRecord, redactSecretsInLine } from "../diagnostics.mjs";
 import { McpHost } from "./mcp-host.mjs";
@@ -71,7 +72,7 @@ test("local-only IPC returns only public previews; confirmation and cancellation
     localOnly: (_name, fn) => (event, ...args) => { if (!event.local) throw new Error("LOCAL_ONLY"); return fn(event, ...args); } });
   for (const fn of handlers.values()) assert.throws(() => fn({ local: false }), /LOCAL_ONLY/);
   const previews = handlers.get("sealbridge:invites")({ local: true });
-  assert.deepEqual(Object.keys(previews[0]).sort(), ["code", "displayName", "expiresAt", "id", "peerDid", "state"]);
+  assert.deepEqual(Object.keys(previews[0]).sort(), ["code", "displayName", "expiresAt", "id", "peerDid", "state", "warnings"]);
   assert.ok(!JSON.stringify(previews).includes(token));
   assert.equal(calls.length, 1);
   assert.equal((await invites.decide(previews[0].id, "trusted")).ok, false);
@@ -151,10 +152,71 @@ test("import errors cross the boundary only as allowlisted codes", async () => {
   assert.equal(queue.list()[0].code, "INVITE_EXPIRED");
 });
 
-test("cancellation cannot hide a failed credential deletion", async () => {
+test("missing metadata closes cancellation with an incomplete deletion warning", async () => {
   const invites = createDesktopInvites();
   invites.enqueue(link);
   await invites.ready(async action => action === "import" ? card : { removed: false });
-  assert.deepEqual(await invites.decide(invites.list()[0].id, "cancel"), { ok: false });
+  assert.deepEqual(await invites.decide(invites.list()[0].id, "cancel"), { ok: true, state: "cancelled-incomplete" });
+  assert.equal(invites.list().length, 0);
+});
+
+
+test("partial removal publishes metadata first, then retries without claiming secret deletion", async () => {
+  const invites = createDesktopInvites();
+  let metadata = true, secret = true, removals = 0;
+  invites.enqueue(link);
+  await invites.ready(async action => {
+    if (action === "import") return card;
+    removals++;
+    if (!metadata) return { removed: false };
+    metadata = false;
+    if (secret) throw new Error("INVITE_SECRET_DELETE_FAILED");
+    return { removed: true };
+  });
+  const id = invites.list()[0].id;
+  assert.deepEqual(await invites.decide(id, "cancel"), { ok: false });
+  assert.equal(metadata, false);
+  assert.equal(secret, true);
   assert.equal(invites.list().length, 1);
+  assert.deepEqual(await invites.decide(id, "cancel"), { ok: true, state: "cancelled-incomplete" });
+  assert.equal(invites.list().length, 0);
+  assert.equal(removals, 2);
+});
+
+test("closing failed imports permits retry while successful imports stay deduplicated", async () => {
+  let attempts = 0;
+  const queue = createInviteQueue({ importInvite: async () => {
+    if (++attempts === 1) throw new Error("KEY_STORE_UNAVAILABLE");
+    return card;
+  } });
+  queue.enqueue(link); await queue.setReady();
+  queue.remove(queue.list()[0].id);
+  queue.enqueue(link); await queue.setReady();
+  assert.equal(attempts, 2);
+  assert.equal(queue.list()[0].state, "pending");
+  queue.remove(queue.list()[0].id);
+  queue.enqueue(link); await queue.setReady();
+  assert.equal(attempts, 2);
+});
+
+
+test("open-url and second-instance reveal through the window creation path when all windows are closed", async () => {
+  for (const event of ["open-url", "second-instance"]) {
+    const app = new EventEmitter(), windows = [];
+    let opened = 0;
+    const queue = createInviteQueue({ importInvite: async () => card });
+    const reveal = () => revealLinkWindow({ tray: () => null, windows: () => windows,
+      activate: current => current.length > 0, open: () => { opened++; windows.push({}); } });
+    captureInviteLinks({ app, queue, argv: [], reveal });
+    if (event === "open-url") app.emit(event, { preventDefault() {} }, link);
+    else app.emit(event, {}, ["fixture", link]);
+    await queue.setReady();
+    assert.equal(opened, 1);
+    assert.equal(queue.list()[0].state, "pending");
+    reveal();
+    assert.equal(opened, 1);
+  }
+  const main = await readFile(new URL("../main.mjs", import.meta.url), "utf8");
+  assert.match(main, /setInviteReveal\(revealForLink\)/);
+  assert.match(main, /openWindowForLink = \(\) =>/);
 });

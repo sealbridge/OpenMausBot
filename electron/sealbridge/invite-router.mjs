@@ -48,7 +48,11 @@ export function createInviteQueue({ importInvite, maxEntries = 16 } = {}) {
     async setReady(value = true) { ready = value; await drain(); },
     list: () => [...cards.values()].map(card => ({ ...card })),
     get: id => cards.get(id),
-    remove: id => { fingerprints.delete(id); return cards.delete(id); },
+    remove: id => {
+      if (cards.get(id)?.state === "error") seen.delete(fingerprints.get(id));
+      fingerprints.delete(id);
+      return cards.delete(id);
+    },
   };
 }
 

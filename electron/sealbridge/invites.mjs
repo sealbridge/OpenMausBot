@@ -8,8 +8,8 @@ export function createDesktopInvites() {
     capture: options => captureInviteLinks({ ...options, queue }),
     async ready(operation) { operate = operation; await queue.setReady(); },
     pause: () => queue.setReady(false),
-    list: () => queue.list().map(({ id, state, code, displayName, peerDid, expiresAt }) =>
-      ({ id, state, code, displayName, peerDid, expiresAt })),
+    list: () => queue.list().map(({ id, state, code, displayName, peerDid, expiresAt, warnings }) =>
+      ({ id, state, code, displayName, peerDid, expiresAt, warnings })),
     async decide(id, decision) {
       if (typeof id !== "string" || !/^[a-f0-9-]{36}$/.test(id) || !["confirm", "cancel"].includes(decision) || busy) return { ok: false };
       const card = queue.get(id);
@@ -21,7 +21,13 @@ export function createDesktopInvites() {
         if (decision === "confirm") {
           if (Date.parse(card.expiresAt) <= Date.now()) return { ok: false };
           await operate("confirm", card.workerRef);
-        } else if (card.owned && !(await operate("remove", card.workerRef)).removed) return { ok: false };
+        } else if (card.owned) {
+          const result = await operate("remove", card.workerRef);
+          if (!result.removed) {
+            queue.remove(id);
+            return { ok: true, state: "cancelled-incomplete" };
+          }
+        }
         queue.remove(id);
         return { ok: true, state: decision === "confirm" ? "pending-connection" : "cancelled" };
       } catch { return { ok: false }; }

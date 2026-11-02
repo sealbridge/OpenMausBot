@@ -43,3 +43,26 @@ it("expired previews disable connecting and allow cancellation by opaque ID", as
     await vi.waitFor(() => expect(inviteDecision).toHaveBeenCalledWith("fixture-id", "cancel"));
   } finally { flushSync(() => root.unmount()); Object.assign(window, { ogb: previous }); }
 });
+
+it("requires warning acknowledgement and shows incomplete deletion after closing", async () => {
+  const previous = window.ogb, inviteDecision = vi.fn().mockResolvedValue({ ok: true, state: "cancelled-incomplete" });
+  Object.assign(window, { ogb: { sealbridge: { invites: async () => [{ id: "warning-fixture", state: "pending",
+    displayName: "Known name", peerDid: "did:key:zBBBB…BBBB", expiresAt: "2099-01-01T00:00:00Z",
+    warnings: ["same-name-different-did", "identity-changed"] }], inviteDecision } } });
+  const host = document.createElement("div"), root = createRoot(host);
+  try {
+    flushSync(() => root.render(createElement(InviteView)));
+    await vi.waitFor(() => expect(host.querySelector('[role="alert"]')).not.toBeNull());
+    expect(host.textContent).toContain("同じ名前の別の相手");
+    expect(host.textContent).toContain("以前と異なる識別情報");
+    const button = (name: string) => Array.from(host.querySelectorAll("button")).find(b => b.textContent === name)!;
+    expect(button("つながる").disabled).toBe(true);
+    flushSync(() => button("つながる").click());
+    expect(inviteDecision).not.toHaveBeenCalled();
+    flushSync(() => button("警告を確認しました").click());
+    expect(button("つながる").disabled).toBe(false);
+    flushSync(() => button("キャンセル").click());
+    await vi.waitFor(() => expect(host.querySelector('[role="dialog"]')).toBeNull());
+    expect(host.textContent).toContain("保管庫から完全に削除できなかった可能性があります。");
+  } finally { flushSync(() => root.unmount()); host.remove(); Object.assign(window, { ogb: previous }); }
+});

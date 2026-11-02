@@ -6,6 +6,7 @@ export function InviteView() {
   const [invites, setInvites] = useState<SealbridgeInvite[]>([]);
   const dialogRef = useRef<HTMLElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const [acknowledged, setAcknowledged] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   useEffect(() => {
@@ -26,12 +27,13 @@ export function InviteView() {
   if (!bridge?.invites) return null;
   const decide = async (decision: "confirm" | "cancel") => {
     if (!card || busy) return;
+    if (decision === "confirm" && card.warnings?.length && acknowledged !== card.id) return;
     setBusy(true);
     try {
       const result = await bridge.inviteDecision(card.id, decision);
       if (result.ok) {
         setInvites(previous => previous.filter(item => item.id !== card.id));
-        setMessage(decision === "confirm" ? "接続の確認を送りました。相手からの応答を待っています。" : "招待を閉じました。");
+        setMessage(decision === "confirm" ? "接続の確認を送りました。相手からの応答を待っています。" : result.state === "cancelled-incomplete" ? "保管庫から完全に削除できなかった可能性があります。" : "招待を閉じました。");
       } else setMessage("処理できませんでした。鍵保管庫や接続を確認し、再試行してください。");
     } catch { setMessage("処理できませんでした。再試行してください。"); }
     finally { setBusy(false); }
@@ -52,12 +54,17 @@ export function InviteView() {
             : card.code === "KEY_STORE_UNAVAILABLE" ? "OSの鍵保管庫を利用できません。解錠してから再試行してください。"
               : "招待を確認できません。署名・期限・接続先を確認し、新しいリンクでお試しください。"}</p> : <>
           <h2>{card.displayName} から接続の招待です</h2>
+          {!!card.warnings?.length && <div role="alert" className="border border-red-600 p-3">
+            {card.warnings.includes("same-name-different-did") && <p>同じ名前の別の相手がすでにいます。DIDを確認してください。</p>}
+            {card.warnings.includes("identity-changed") && <p>以前と異なる識別情報です。相手に確認してください。</p>}
+            <button className="ui-button" disabled={busy || acknowledged === card.id} onClick={() => setAcknowledged(card.id)}>警告を確認しました</button>
+          </div>}
           <p>相手のDID: {card.peerDid}</p>
           <p>この招待は {card.expiresAt} まで有効です。</p>
           <p>つながると、この相手とあなたは互いに依頼を送れます。届いた依頼は受信箱で検査され、あなたが開くまで実行されません。依頼を送るたびに、送信前に確認画面が出ます。</p>
           <p>接続は制限付きです。</p>
           <p>この招待はリンクを知っている人なら誰でも使えます。心当たりのない招待は受け入れないでください。</p>
-          <button className="ui-button" disabled={busy || Date.parse(card.expiresAt ?? "") <= Date.now()} onClick={() => { void decide("confirm"); }}>つながる</button>
+          <button className="ui-button" disabled={busy || (!!card.warnings?.length && acknowledged !== card.id) || Date.parse(card.expiresAt ?? "") <= Date.now()} onClick={() => { void decide("confirm"); }}>つながる</button>
         </>}
         <button ref={cancelRef} className="ui-button" disabled={busy} onClick={() => { void decide("cancel"); }}>キャンセル</button>
       </div>

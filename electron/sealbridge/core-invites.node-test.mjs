@@ -41,6 +41,19 @@ test("pinned core imports into OS secret store, keeps DID, confirms only limited
   const preview = api.import(token);
   assert.equal(preview.owned, true);
   assert.equal(api.import(token).owned, false);
+  const otherPeer = core.generateKeyPair();
+  const otherCard = core.createSignedAgentCard({ name: "G4 fixture peer", agentDid: otherPeer.did,
+    relayEndpoint: "https://relay.sealbridge.dev", skills: [], protocolVersions: ["0.2.0"] }, otherPeer);
+  const otherToken = core.createInviteToken({ agentCard: otherCard, expiresInSeconds: 3600 }, otherPeer);
+  const otherPreview = api.import(otherToken);
+  assert.deepEqual(otherPreview.warnings, ["same-name-different-did"]);
+  assert.deepEqual(preview.warnings, []);
+  const renamedCard = core.createSignedAgentCard({ name: "Changed fixture", agentDid: peer.did,
+    relayEndpoint: "https://relay.sealbridge.dev", skills: [], protocolVersions: ["0.2.0"] }, peer);
+  const renamedPreview = api.import(core.createInviteToken({ agentCard: renamedCard, expiresInSeconds: 3600 }, peer));
+  assert.deepEqual(renamedPreview.warnings, ["identity-changed"]);
+  api.remove(renamedPreview.workerRef);
+  api.remove(otherPreview.workerRef);
   assert.equal(frames.length, 0);
   assert.ok([...secrets.values()].includes(token));
   const { owner, identityOptions } = await resolveCoreContext(options);
@@ -57,6 +70,13 @@ test("pinned core imports into OS secret store, keeps DID, confirms only limited
   assert.equal(first.did, second.did);
   assert.deepEqual(api.remove(preview.workerRef), { removed: true });
   assert.ok(![...secrets.values()].includes(token));
+  const changedAgent = core.generateKeyPair();
+  const changedAgentCard = core.createSignedAgentCard({ name: "G4 fixture peer", agentDid: changedAgent.did,
+    relayEndpoint: "https://relay.sealbridge.dev", skills: [], protocolVersions: ["0.2.0"] }, peer, changedAgent);
+  const changedAgentToken = core.createInviteToken({ agentCard: changedAgentCard, expiresInSeconds: 3600 }, peer);
+  const changedPreview = api.import(changedAgentToken);
+  assert.deepEqual(changedPreview.warnings, ["identity-changed"]);
+  api.remove(changedPreview.workerRef);
   assert.ok(!(await allBytes(dataDir)).includes(Buffer.from(token)));
   assert.ok(!JSON.stringify([preview, frames, mcp]).includes(token));
   assert.ok(!(await allBytes(dataDir)).includes(Buffer.from('"d":')));
