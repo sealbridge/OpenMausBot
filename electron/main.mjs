@@ -1,4 +1,5 @@
 import "./sealbridge/app-identity.mjs";
+import { setInviteReveal, revealLinkWindow } from "./sealbridge/link-window.mjs";
 import { startDesktopCore } from "./sealbridge/desktop-core.mjs";
 import { app, autoUpdater as nativeAutoUpdater, BrowserWindow, Tray, WebContentsView, clipboard, desktopCapturer, dialog, globalShortcut, ipcMain, Menu, nativeImage, Notification, powerMonitor, powerSaveBlocker, safeStorage, screen, session, shell, systemPreferences, utilityProcess, nativeTheme } from "electron";
 import { createRequire } from "node:module";
@@ -212,13 +213,12 @@ function deliverChatLink(win = mainWindow) {
 }
 
 let openWindowForLink = null;
+setInviteReveal(revealForLink);
 
 /** macOS open-url does not fire activate, so a link that finds no window opens one. */
 function revealForLink() {
-  if (desktopTray?.show()) return;
-  const appWindow = !startupScreen && mainWindow && !mainWindow.isDestroyed() ? [mainWindow] : appWindows();
-  if (activateExistingWindow(appWindow)) return;
-  openWindowForLink?.();
+  revealLinkWindow({ tray: () => desktopTray, windows: () => !startupScreen && mainWindow && !mainWindow.isDestroyed() ? [mainWindow] : appWindows(),
+    activate: activateExistingWindow, open: () => openWindowForLink?.() });
 }
 
 function queuePackageInstall(rawLink) {

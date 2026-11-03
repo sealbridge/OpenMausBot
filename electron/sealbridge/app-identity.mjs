@@ -1,3 +1,5 @@
+import { revealInvite } from "./link-window.mjs";
+import { desktopInvites } from "./invites.mjs";
 import { app } from "electron";
 import { mkdirSync } from "node:fs";
 import { product, userDataPath } from "./product.mjs";
@@ -10,3 +12,5 @@ if (process.platform === "win32") app.setAppUserModelId(product.appId);
 
 // GNOME groups the window with its desktop entry only when both identities match; set before ready.
 if (process.platform === "linux") app.setDesktopName(product.desktopName);
+
+desktopInvites.capture({ app, reveal: () => { if (app.isReady()) revealInvite(); } });

@@ -22,6 +22,7 @@ for (const newline of ["\n", "\r\n"]) {
     assert.ok(main.startsWith('import "./sealbridge/app-identity.mjs";'));
     const values = {};
     vm.runInNewContext(initialization, {
+      desktopInvites: { capture: ({ app }) => { assert.equal(typeof app.getPath, "function"); } },
       mkdirSync: fs.mkdirSync, userDataPath, product, process: { platform: "win32" },
       app: {
         getPath: key => { assert.equal(key, "appData"); return home; },

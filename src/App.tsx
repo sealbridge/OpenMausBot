@@ -1,3 +1,4 @@
+import { InviteView } from "./features/sealbridge/InviteView";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, Loader2, Menu } from "lucide-react";
 import { CLOUD_LINK_SETTINGS, openBot, StoreProvider, useStore } from "@/state/store";
@@ -462,6 +463,7 @@ function Application() {
         <ThreadRefsProvider>
           <Shell viewer={viewer} />
         </ThreadRefsProvider>
+        <InviteView />
         <WelcomeGate viewer={viewer} />
         <MausBotWelcome viewer={viewer} />
         <CloudTimeZoneSync viewer={viewer} />
