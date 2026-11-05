@@ -82,7 +82,38 @@ it("prepares the selected body with view_only and clears the summary after edits
     flushSync(() => check.click());
     await vi.waitFor(() => expect(host.querySelector('[aria-label="grant 要約"]')).not.toBeNull());
     expect(prepareContext).toHaveBeenCalledExactlyOnceWith({ ...defaultContextDraft(), selectors: ["$.items"], fieldsAllowed: ["size"], angle: "可否だけ", body: "本文" });
+    for (const area of Array.from(areas).slice(0, 3)) {
+      flushSync(() => area.dispatchEvent(new FocusEvent("focusout", { bubbles: true })));
+      expect(host.querySelector('[aria-label="grant 要約"]')).not.toBeNull();
+    }
+    type(areas[0], "  $.items  \n\n");
+    flushSync(() => areas[0].dispatchEvent(new FocusEvent("focusout", { bubbles: true })));
+    expect(areas[0].value).toBe("$.items");
+    expect(host.querySelector('[aria-label="grant 要約"]')).toBeNull();
+    flushSync(() => check.click());
+    await vi.waitFor(() => expect(host.querySelector('[aria-label="grant 要約"]')).not.toBeNull());
     type(areas[4], "変更した本文");
     expect(host.querySelector('[aria-label="grant 要約"]')).toBeNull();
   } finally { flushSync(() => root.unmount()); Object.assign(window, { ogb: previous }); }
+});
+
+it("refreshes remaining time every minute and clears the timer on unmount", () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-11-01T00:00:00Z"));
+  const host = document.createElement("div"), root = createRoot(host);
+  const summary: ContextGrantSummary = { mode: "view_only", angle: "可否だけ", allowedCount: 1, deniedCount: 0,
+    bytes: 5, expiresAt: "2026-11-01T01:00:30Z", retention: "none", digest: "0123456789abcdef" };
+  try {
+    flushSync(() => root.render(createElement(GrantSummary, { summary })));
+    expect(host.textContent).toContain("残り 2時間");
+    flushSync(() => vi.advanceTimersByTime(60000));
+    expect(host.textContent).toContain("残り 1時間");
+    flushSync(() => vi.advanceTimersByTime(3600000));
+    expect(host.textContent).toContain("残り 0時間");
+    expect(host.querySelector('[role="alert"]')?.textContent).toBe(copy.expiredReceive);
+  } finally {
+    flushSync(() => root.unmount());
+    expect(vi.getTimerCount()).toBe(0);
+    vi.useRealTimers();
+  }
 });

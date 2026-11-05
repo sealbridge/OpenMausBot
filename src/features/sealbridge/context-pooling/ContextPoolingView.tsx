@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { defaultContextDraft, selectionBytes, selectionError } from "../../../../shared/context-pooling";
 import type { ContextGrantSummary, ContextSelectionDraft } from "../../../../shared/context-pooling";
 import { copy, modes } from "../../../../shared/context-pooling-copy.json";
+import { Select } from "../../../components/Select";
 import { GrantSummary } from "./GrantSummary";
 
 const templates = ["工程の可否と、足りない情報の箇条書きだけ", "材料費と工程費の内訳見積もり", "違反の有無と該当箇所"];
@@ -38,10 +39,13 @@ export function ContextPoolingView() {
       <p>送る部分を自分で切り出して入力してください。範囲の宣言だけでは本文の列や行は取り除かれません。</p>
       {([['selectors', '範囲（selectors）'], ['fieldsAllowed', '許可する列（fieldsAllowed）'], ['fieldsDenied', '拒否する列（fieldsDenied）']] as const).map(([key, label]) =>
         <label key={key} className="block">{label}（1行に1件）<textarea className="ui-input block w-full" value={draft[key].join("\n")}
-          onChange={event => update({ [key]: event.target.value.split("\n") })} onBlur={() => update({ [key]: splitLines(draft[key].join("\n")) })} /></label>)}
-      <label className="block">観点テンプレ<select className="ui-input block" defaultValue="" onChange={event => update({ angle: event.target.value })}>
+          onChange={event => update({ [key]: event.target.value.split("\n") })} onBlur={() => {
+            const normalized = splitLines(draft[key].join("\n"));
+            if (normalized.length !== draft[key].length || normalized.some((value, index) => value !== draft[key][index])) update({ [key]: normalized });
+          }} /></label>)}
+      <label className="block">観点テンプレ<Select className="w-full" value={templates.includes(draft.angle) ? draft.angle : ""} onChange={event => update({ angle: event.target.value })}>
         <option value="">自由入力</option>{templates.map(value => <option key={value}>{value}</option>)}
-      </select></label>
+      </Select></label>
       <label className="block">観点<textarea className="ui-input block w-full" maxLength={2048} placeholder={copy.anglePlaceholder} value={draft.angle} onChange={event => update({ angle: event.target.value })} /></label>
       <label className="block">送信する切り出し本文<textarea className="ui-input block w-full" rows={6} value={draft.body} onChange={event => update({ body: event.target.value })} /></label>
       <p>切り出しの大きさ: {(bytes / 1024).toFixed(2)} KB / 上限 64 KB</p>

@@ -1,11 +1,18 @@
+import { useEffect, useState } from "react";
 import type { ContextGrantSummary } from "../../../../shared/context-pooling";
 import { copy, modes } from "../../../../shared/context-pooling-copy.json";
 
-export function GrantSummary({ summary, beforeOpen = false, now = Date.now() }: {
+export function GrantSummary({ summary, beforeOpen = false, now }: {
   summary: ContextGrantSummary; beforeOpen?: boolean; now?: number;
 }) {
+  const [currentTime, setCurrentTime] = useState(Date.now);
+  useEffect(() => {
+    if (now !== undefined) return;
+    const interval = setInterval(() => setCurrentTime(Date.now()), 60000);
+    return () => clearInterval(interval);
+  }, [now]);
   const mode = modes[summary.mode];
-  const hours = Math.max(0, (Date.parse(summary.expiresAt) - now) / 3600000);
+  const hours = Math.max(0, (Date.parse(summary.expiresAt) - (now ?? currentTime)) / 3600000);
   return <section aria-label="grant 要約" className="space-y-2 rounded-lg border border-edge p-3" style={{ overflowWrap: "anywhere" }}>
     <span title={mode.supplement} className="rounded bg-panel px-2 py-1">{mode.badge}</span>
     <p>{mode.supplement}</p>
