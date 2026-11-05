@@ -1,3 +1,4 @@
+import { ContextPoolingView } from "../features/sealbridge/context-pooling/ContextPoolingView";
 import { SealbridgeStatusRow } from "./SealbridgeStatusRow";
 import { useEffect, useRef, useState } from "react";
 import { Archive, ChartNoAxesColumn, Cloud, CloudDownload, Coins, Download, FlaskConical, KeyRound, LockKeyhole, Monitor, Palette, ScrollText, Search, Settings, Sparkles, TabletSmartphone, Terminal, User, Users, X, Building2, Zap, BookOpen } from "lucide-react";
@@ -362,6 +363,7 @@ export function SettingsModal() {
 
             {!remoteActive && <ReplayTourRow />}
             <SealbridgeStatusRow />
+            <ContextPoolingView />
             <UpdatesRow />
             <DiagnosticsRow />
           </>

@@ -1,9 +1,9 @@
 # Bundled core
 
 Upstream source: https://github.com/sealbridge/sealbridge, commit
-`0afeba0d90ca18e5f0bc3176fd62d9ca247f6b3f` (upstream version `0.2.2`).
-The registry's `0.2.2` predates the required key-store contracts, so the desktop
-installs the archived package here, never a registry package with the same version.
+`c6fdc288611c628c56840a0ea7a9176b5786ed49` (upstream version `0.4.2`).
+The desktop installs this archived commit, including CP1 and the SDK surface,
+never a registry package with the same version.
 `provenance.json` records SHA-256 hashes; the preparation script verifies both
 archives before `npm ci`. `runtime/sealbridge/package-lock.json` pins the complete
 runtime dependency graph, including `@napi-rs/keyring@2.1.2` and platform natives.
@@ -45,3 +45,7 @@ The invitation adapter uses core InviteStore.open/import/remove with keychain se
 Raw credentials enter a one-shot child through stdin only. Confirmation uses the
 core connectionsCommand confirm-invite with a saved reference after desktop human
 confirmation; it creates limited consent and does not grant task execution.
+
+Context preparation uses the bundled sealbridge/sdk exports for grant construction,
+validation and digest-only audit payload projection. Preparation does not append
+lifecycle events because it does not send, open or delete context.

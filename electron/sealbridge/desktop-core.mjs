@@ -1,3 +1,4 @@
+import { registerContextPoolingIpc, createContextPreparation, loadContextSdk } from "./context-pooling.mjs";
 import { clipboard } from "electron";
 import { desktopInvites, registerInviteIpc } from "./invites.mjs";
 import { createInviteProcess } from "./invite-process.mjs";
@@ -11,6 +12,8 @@ export function startDesktopCore({ app, ipcMain, localOnly }) {
     resourcesPath: app.isPackaged ? process.resourcesPath : undefined,
   });
   registerCoreIpc({ ipcMain, localOnly, service: { ...service, retry: async () => prepareInvites(await service.retry()) } });
+  registerContextPoolingIpc({ ipcMain, localOnly, prepare: createContextPreparation({ loadSdk: () => loadContextSdk(
+    app.isPackaged ? path.join(process.resourcesPath, "sealbridge-runtime") : developmentRuntimeDir) }) });
   registerInviteIpc({ ipcMain, localOnly, clipboard });
   const operate = createInviteProcess({ dataDir: path.join(app.getPath("userData"), "sealbridge-core"),
     runtimeDir: app.isPackaged ? path.join(process.resourcesPath, "sealbridge-runtime") : developmentRuntimeDir });

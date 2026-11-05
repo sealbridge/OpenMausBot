@@ -1,3 +1,4 @@
+import { ContextPoolingView } from "../features/sealbridge/context-pooling/ContextPoolingView";
 import { SealbridgeStatusRow } from "./SealbridgeStatusRow";
 import type { ReactNode } from "react";
 import type { AppSettingsSection } from "@/state/store";
@@ -199,6 +200,7 @@ export function SimpleUpdatesPage({ remoteActive }: { remoteActive: boolean }) {
     <SettingsGroup block="updates">
       <SettingsRows>
         <SealbridgeStatusRow />
+        <ContextPoolingView />
         {window.ogb?.updater ? <UpdatesRow title={versionTitle()} /> : <ServerUpdatesRow />}
         <UpdatesConsentRow />
         {!remoteActive && <ReplayTourRow />}

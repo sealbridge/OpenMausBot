@@ -37,6 +37,7 @@ files:
   - "!**/node_modules/**"
   - package.json
   - branding/product.json
+  - shared/context-pooling-copy.json
 
 asar: true
 
