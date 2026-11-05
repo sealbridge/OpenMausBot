@@ -169,7 +169,7 @@ test("a Cloud link arriving before React subscriptions is delivered exactly once
 
 test("Sealbridge bridge forwards only fixed status and retry operations", async () => {
   const before = invocations.length;
-  assert.deepEqual(Object.keys(exposed.api.sealbridge).sort(), ["inviteDecision", "invites", "pasteInvite", "retry", "status"]);
+  assert.deepEqual(Object.keys(exposed.api.sealbridge).sort(), ["inviteDecision", "invites", "pasteInvite", "prepareContext", "retry", "status"]);
   await exposed.api.sealbridge.status({ privateKey: "fixture-only" });
   await exposed.api.sealbridge.retry("arbitrary-tool");
   assert.deepEqual(invocations.slice(before), [["sealbridge:status"], ["sealbridge:retry"]]);
@@ -184,4 +184,12 @@ test("invitation preload accepts only opaque decision IDs and fixed choices", as
   await exposed.api.sealbridge.pasteInvite("acp-invite:G4_DUMMY_SECRET");
   await exposed.api.sealbridge.inviteDecision("11111111-1111-1111-1111-111111111111", "cancel");
   assert.deepEqual(invocations.slice(before), [["sealbridge:invites"], ["sealbridge:invite-paste"], ["sealbridge:invite-decision", "11111111-1111-1111-1111-111111111111", "cancel"]]);
+});
+
+
+test("context preparation exposes one fixed local channel", async () => {
+  const before = invocations.length;
+  const draft = { body: "DCP_FIXED_DUMMY_SECRET_BODY", deliveryMode: "view_only" };
+  await exposed.api.sealbridge.prepareContext(draft, "arbitrary-method");
+  assert.deepEqual(invocations.slice(before), [["sealbridge:context-prepare", draft]]);
 });
