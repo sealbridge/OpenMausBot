@@ -128,6 +128,12 @@ const bridge = {
   /** This app's version, and whether this page is this app's own (served by this computer, not a server from the Server menu). */
   app: { version: appVersion, ownPage: isLocalPage },
   sealbridge: {
+    contextRecipients: () => ipcRenderer.invoke("sealbridge:context-recipients"),
+    startContext: (id, draft) => ipcRenderer.invoke("sealbridge:context-start", id, draft),
+    contextStatus: () => ipcRenderer.invoke("sealbridge:context-status"),
+    answerContext: (id, accept) => ipcRenderer.invoke("sealbridge:context-answer", id, accept),
+    cancelContext: () => ipcRenderer.invoke("sealbridge:context-cancel"),
+    resetContext: () => ipcRenderer.invoke("sealbridge:context-reset"),
     prepareContext: draft => ipcRenderer.invoke("sealbridge:context-prepare", draft),
     invites: () => ipcRenderer.invoke("sealbridge:invites"),
     inviteDecision: (id, decision) => typeof id === "string" && /^[a-f0-9-]{36}$/.test(id) && ["confirm", "cancel"].includes(decision)

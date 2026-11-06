@@ -9,6 +9,12 @@ export interface SealbridgeStatus {
 
 /** Fixed local desktop actions; no arbitrary core methods or tool arguments are accepted. */
 export interface SealbridgeBridge {
+  contextRecipients(): Promise<ContextRecipient[]>;
+  startContext(id: string, draft: ContextSelectionDraft): Promise<{ ok: boolean }>;
+  contextStatus(): Promise<ContextSendStatus>;
+  answerContext(id: number, accept: boolean): Promise<{ ok: boolean }>;
+  cancelContext(): Promise<{ ok: boolean }>;
+  resetContext(): Promise<void>;
   prepareContext(draft: ContextSelectionDraft): Promise<ContextPreparation>;
   invites(): Promise<SealbridgeInvite[]>;
   inviteDecision(id: string, decision: "confirm" | "cancel"): Promise<{ ok: boolean; state?: string }>;
@@ -26,4 +32,15 @@ export interface SealbridgeInvite {
   peerDid?: string;
   expiresAt?: string;
   warnings?: ("same-name-different-did" | "identity-changed")[];
+}
+
+/** Display-only connected target; id resolves to routing data in main. */
+export interface ContextRecipient { id: string; name: string; did: string; state: "connected" }
+/** Transient send state and the SDK approval request projection. */
+export interface ContextSendStatus {
+  state: string;
+  peerRejected?: boolean;
+  deliverable?: string;
+  approval?: { id: number; gate: string; recipient: string; mode: string; angle: string;
+    allowedCount: number; deniedCount: number; bytes: number; expiresAt: string; digest: string; deliverable?: string; deliverableDigest?: string };
 }
