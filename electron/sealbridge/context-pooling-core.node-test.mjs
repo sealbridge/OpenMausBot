@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync, statSync } from "node:fs";
+import path from "node:path";
+import { developmentRuntimeDir } from "./runtime.mjs";
 import { createContextPreparation, loadContextSdk, receivedContextSummary } from "./context-pooling.mjs";
 
 const sdk = await loadContextSdk();
@@ -38,4 +41,17 @@ test("bundled SDK defaults and active restrictions", async () => {
   await sdk.appendContextGrantAuditEvent((...args) => { events.push(args); }, "CONTEXT_GRANT", grant);
   assert.equal(JSON.stringify(events).includes(options.angle), false);
   assert.match(JSON.stringify(events), /grantDigest/);
+});
+
+test("bundled SDK exposes C-W1 inspection and C-W2 held task content", () => {
+  for (const name of ["inspectRuleContent", "createRuleBasedContentReviewProvider", "taskContent"])
+    assert.equal(typeof sdk[name], "function", name);
+  const root = path.join(developmentRuntimeDir, "node_modules/sealbridge/dist");
+  for (const name of ["key-store", "application-config", "mcp-server", "invite-store", "index"])
+    assert.ok(statSync(path.join(root, "packages/runtime/dist", name + ".js")).isFile());
+  assert.ok(statSync(path.join(root, "cli/dist/sdk.js")).isFile());
+  const types = readFileSync(path.join(root, "cli/dist/sdk.d.ts"), "utf8");
+  assert.match(types, /export type \{[^}]*\bHeldTaskContent\b[^}]*\} from '\.\.\/\.\.\/packages\/runtime\/dist\/index\.js'/);
+  const runtimeTypes = readFileSync(path.join(root, "packages/runtime/dist/held-task-content.d.ts"), "utf8");
+  assert.match(runtimeTypes, /export interface HeldTaskContent\b/);
 });
