@@ -1,8 +1,8 @@
 # Bundled core
 
 Upstream source: https://github.com/sealbridge/sealbridge, commit
-`e4127fef766575af53628e85e01f9a4888a583fe` (upstream version `0.5.0`).
-The desktop installs this archived commit, including CP5a and the SDK surface,
+`7e306e5c9b336632c33ea4ba9fd60a000ec9aa94` (upstream version `0.5.0`).
+The desktop installs this archived commit, including CP5a, C-W1 rule inspection and C-W2 held task content exports,
 never a registry package with the same version.
 `provenance.json` records SHA-256 hashes; the preparation script verifies both
 archives before `npm ci`. `runtime/sealbridge/package-lock.json` pins the complete
@@ -10,7 +10,7 @@ runtime dependency graph, including `@napi-rs/keyring@2.1.2` and platform native
 
 `source.tar.gz` is `git archive --format=tar.gz` of that commit. To rebuild the
 package, extract it into a new temporary directory, install with its frozen
-`pnpm-lock.yaml` using pnpm 10.34.6, then run `pnpm run package:cli` and
+`pnpm-lock.yaml` using Corepack pnpm@10.34.6, then run `pnpm run package:cli` and
 `npm pack --ignore-scripts`. These operations must run in the temporary copy,
 never in the read-only reference clone. Review and update both archive hashes
 and the runtime lockfile together when upgrading.
