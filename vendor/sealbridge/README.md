@@ -1,9 +1,9 @@
 # Bundled core
 
 Upstream source: https://github.com/sealbridge/sealbridge, commit
-`7e306e5c9b336632c33ea4ba9fd60a000ec9aa94` (upstream version `0.5.0`).
+`979d65debe03d8c18a948623e2c7e07bc3c9ecfb` (upstream version `0.5.0`).
 The desktop installs this archived commit, including CP5a, C-W1 rule inspection and C-W2 held task content exports,
-never a registry package with the same version.
+never a registry package with the same version. When the parent is Electron, the rule inspector child receives the constant `ELECTRON_RUN_AS_NODE=1`.
 `provenance.json` records SHA-256 hashes; the preparation script verifies both
 archives before `npm ci`. `runtime/sealbridge/package-lock.json` pins the complete
 runtime dependency graph, including `@napi-rs/keyring@2.1.2` and platform natives.
