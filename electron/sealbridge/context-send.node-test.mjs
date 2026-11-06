@@ -3,9 +3,9 @@ import test from "node:test";
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 import path from "node:path";
-import { mkdtemp, rm, readFile, readdir } from "node:fs/promises";
+import { mkdtemp, rm, readFile, readdir, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { spawn, execFileSync } from "node:child_process";
 import { createInterface } from "node:readline";
 import { createSendApproval } from "./context-send-approval.mjs";
@@ -32,6 +32,71 @@ async function allBytes(dir) {
   return Buffer.concat(await Promise.all(entries.map(entry => (entry.isDirectory()
     ? allBytes(path.join(dir, entry.name)) : readFile(path.join(dir, entry.name))).catch(absentDuringScan))));
 }
+
+for (const linked of [false, true]) {
+  test(`context send child runs through a ${linked ? "symlink" : "direct path"}`, async t => {
+    const dir = await mkdtemp(path.join(tmpdir(), "context-send-entry-"));
+    t.after(() => rm(dir, { recursive: true, force: true }));
+    let entry = fileURLToPath(new URL("./context-send-child.mjs", import.meta.url));
+    if (linked) {
+      const link = path.join(dir, "child.mjs");
+      try { await symlink(entry, link, "file"); }
+      catch (error) {
+        if (["EPERM", "EACCES", "ENOSYS", "ENOTSUP"].includes(error.code)) {
+          t.skip(`symlinks unavailable: ${error.code}`);
+          return;
+        }
+        throw error;
+      }
+      entry = link;
+    }
+    const child = spawn(process.execPath, [entry], { cwd: dir, env: sanitizedEnvironment(process.env, dir) });
+    t.after(() => { if (child.exitCode === null) child.kill(); });
+    let stdout = "", stderr = "";
+    child.stdout.setEncoding("utf8").on("data", chunk => { stdout += chunk; });
+    child.stderr.setEncoding("utf8").on("data", chunk => { stderr += chunk; });
+    const timer = setTimeout(() => child.kill(), 10_000);
+    t.after(() => clearTimeout(timer));
+    const exited = new Promise((resolve, reject) => {
+      child.once("error", reject);
+      child.once("close", (code, signal) => resolve({ code, signal }));
+    });
+    child.stdin.end(JSON.stringify({ type: "start" }) + "\n");
+    assert.deepEqual(await exited, { code: 0, signal: null }, stderr);
+    assert.deepEqual(stdout.trim().split("\n").map(line => JSON.parse(line)), [
+      { type: "result", state: "failed", peerRejected: false },
+    ]);
+  });
+}
+
+test("connected unpublished peers retain the protocol floor for owner and agent lookups", async () => {
+  const before = process.stdin.eventNames().map(name => [name, process.stdin.listenerCount(name)]);
+  const { createProtocolPeers } = await import("./context-send-child.mjs");
+  assert.deepEqual(process.stdin.eventNames().map(name => [name, process.stdin.listenerCount(name)]), before);
+  const connected = { peerOwnerDid: "did:fixture:owner", peerAgentDid: "did:fixture:agent" };
+  const calls = [];
+  const observed = {
+    version: undefined,
+    floor(peer, agent) { calls.push([peer, agent]); return this.version; },
+    observe(value) { assert.equal(this, observed); return value; },
+    observePolicy(value) { assert.equal(this, observed); return value; },
+  };
+  const peers = createProtocolPeers(observed, connected);
+  assert.equal(peers.floor(connected.peerOwnerDid, connected.peerOwnerDid), "0.2.0");
+  assert.equal(peers.floor(connected.peerOwnerDid, connected.peerAgentDid), "0.2.0");
+  assert.equal(peers.floor("did:fixture:other", connected.peerAgentDid), undefined);
+  assert.equal(peers.floor(connected.peerOwnerDid, "did:fixture:other"), undefined);
+  assert.deepEqual(calls[0], [connected.peerOwnerDid, connected.peerOwnerDid]);
+  observed.version = "0.3.0";
+  assert.equal(peers.floor(connected.peerOwnerDid, connected.peerOwnerDid), "0.3.0");
+  assert.equal(peers.floor("did:fixture:other", "did:fixture:other"), "0.3.0");
+  observed.version = undefined;
+  assert.equal(peers.floor(connected.peerOwnerDid, connected.peerOwnerDid), "0.2.0");
+  assert.equal(createProtocolPeers(observed, { peerOwnerDid: connected.peerOwnerDid })
+    .floor(connected.peerOwnerDid, connected.peerOwnerDid), "0.2.0");
+  assert.equal(peers.observe("observation"), "observation");
+  assert.equal(peers.observePolicy("policy"), "policy");
+});
 
 test("human approval binds the displayed digest to the request immediately before signing", async () => {
   const owner = sdk.generateKeyPair(), worker = sdk.generateKeyPair();
