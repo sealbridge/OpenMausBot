@@ -1,8 +1,8 @@
 # Bundled core
 
 Upstream source: https://github.com/sealbridge/sealbridge, commit
-`c6fdc288611c628c56840a0ea7a9176b5786ed49` (upstream version `0.4.2`).
-The desktop installs this archived commit, including CP1 and the SDK surface,
+`e4127fef766575af53628e85e01f9a4888a583fe` (upstream version `0.5.0`).
+The desktop installs this archived commit, including CP5a and the SDK surface,
 never a registry package with the same version.
 `provenance.json` records SHA-256 hashes; the preparation script verifies both
 archives before `npm ci`. `runtime/sealbridge/package-lock.json` pins the complete

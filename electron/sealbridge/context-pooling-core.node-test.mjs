@@ -18,8 +18,10 @@ test("bundled SDK defaults and active restrictions", async () => {
     assert.equal(result.summary.mode, deliveryMode);
     assert.equal(result.summary.bytes, 302);
   }
-  assert.throws(() => sdk.buildContextGrant({ ...options, deliveryMode: "approval_redelegation" }, createdAt), /CONTEXT_GRANT_MODE_UNAVAILABLE/);
-  assert.throws(() => sdk.validateContextGrant({ ...grant, deliveryMode: "approval_redelegation" }, createdAt), /CONTEXT_GRANT_MODE_UNAVAILABLE/);
+  const approvalGrant = sdk.buildContextGrant({ ...options, deliveryMode: "approval_redelegation" }, createdAt);
+  assert.equal(approvalGrant.deliveryMode, "approval_redelegation");
+  const refused = await createContextPreparation({ now: () => now })({ ...options, body: "input", deliveryMode: "approval_redelegation", lifetimeHours: 24 });
+  assert.equal(refused.ok, false);
   assert.throws(() => sdk.buildContextGrant({ ...options, deliveryMode: "hand_over", inputRetentionAllowed: true }, createdAt), /SCHEMA_VIOLATION|CONTEXT_GRANT_INPUT_RETENTION_UNAVAILABLE/);
   assert.throws(() => sdk.buildContextGrant({ ...options, expiresAt: "2026-11-08T00:00:01Z" }, createdAt), /CONTEXT_GRANT_EXPIRY_INVALID/);
   const manifest = { contextGrant: grant, createdAt, protocolVersion: "0.2.0", permissions: { maxDelegationDepth: 0 }, sandboxPolicy: { filesystemScope: "ephemeral_workspace_only" } };
@@ -27,7 +29,9 @@ test("bundled SDK defaults and active restrictions", async () => {
   const summary = receivedContextSummary(sdk, manifest, "DCP_FIXED_DUMMY_SECRET_BODY", now);
   assert.equal(summary.bytes, Buffer.byteLength(JSON.stringify("DCP_FIXED_DUMMY_SECRET_BODY")));
   assert.equal(JSON.stringify(summary).includes("DCP_FIXED_DUMMY_SECRET_BODY"), false);
-  assert.throws(() => receivedContextSummary(sdk, { ...manifest, contextGrant: { ...grant, deliveryMode: "approval_redelegation" } }, "input", now), /CONTEXT_GRANT_MODE_UNAVAILABLE/);
+  const approvalSummary = receivedContextSummary(sdk, { ...manifest, permissions: { maxDelegationDepth: 1 }, contextGrant: approvalGrant }, "DCP_FIXED_DUMMY_SECRET_BODY", now);
+  assert.equal(approvalSummary.mode, "approval_redelegation");
+  assert.equal(JSON.stringify(approvalSummary).includes("DCP_FIXED_DUMMY_SECRET_BODY"), false);
   assert.throws(() => sdk.validateContextGrantUse(manifest, "a".repeat(65535), now), /CONTEXT_GRANT_MAX_BYTES_EXCEEDED/);
   assert.throws(() => sdk.validateContextGrantUse(manifest, "ok", now + 86400000), /CONTEXT_GRANT_EXPIRED/);
   const events = [];
