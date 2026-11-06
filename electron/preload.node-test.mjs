@@ -169,7 +169,7 @@ test("a Cloud link arriving before React subscriptions is delivered exactly once
 
 test("Sealbridge bridge forwards only fixed status and retry operations", async () => {
   const before = invocations.length;
-  assert.deepEqual(Object.keys(exposed.api.sealbridge).sort(), ["inviteDecision", "invites", "pasteInvite", "prepareContext", "retry", "status"]);
+  assert.deepEqual(Object.keys(exposed.api.sealbridge).sort(), ["answerContext", "cancelContext", "contextRecipients", "contextStatus", "inviteDecision", "invites", "pasteInvite", "prepareContext", "resetContext", "retry", "startContext", "status"]);
   await exposed.api.sealbridge.status({ privateKey: "fixture-only" });
   await exposed.api.sealbridge.retry("arbitrary-tool");
   assert.deepEqual(invocations.slice(before), [["sealbridge:status"], ["sealbridge:retry"]]);
@@ -192,4 +192,15 @@ test("context preparation exposes one fixed local channel", async () => {
   const draft = { body: "DCP_FIXED_DUMMY_SECRET_BODY", deliveryMode: "view_only" };
   await exposed.api.sealbridge.prepareContext(draft, "arbitrary-method");
   assert.deepEqual(invocations.slice(before), [["sealbridge:context-prepare", draft]]);
+});
+
+test("context sending uses only fixed local IPC operations", async () => {
+  const before = invocations.length;
+  await exposed.api.sealbridge.contextRecipients("ignored");
+  await exposed.api.sealbridge.contextStatus("ignored");
+  await exposed.api.sealbridge.answerContext(3, false);
+  await exposed.api.sealbridge.cancelContext("ignored");
+  await exposed.api.sealbridge.resetContext("ignored");
+  assert.deepEqual(invocations.slice(before), [["sealbridge:context-recipients"], ["sealbridge:context-status"],
+    ["sealbridge:context-answer", 3, false], ["sealbridge:context-cancel"], ["sealbridge:context-reset"]]);
 });

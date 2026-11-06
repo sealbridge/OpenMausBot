@@ -58,6 +58,12 @@ export function createCoreService({ dataDir, resourcesPath, runtimeDir = develop
   }
   return Object.freeze({
     start, status: snapshot,
+    async listConnections() {
+      if (status.state !== "ready") throw new Error();
+      const result = await host.callTool("acp_list_connections", {});
+      if (result?.isError) throw new Error();
+      return result.structuredContent ?? JSON.parse(result.content.find(item => item.type === "text").text);
+    },
     async retry() {
       if (stopped) return snapshot();
       clearTimeout(timer); timer = undefined;

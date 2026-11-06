@@ -1,3 +1,4 @@
+import { ContextSendPanel } from "./ContextSendPanel";
 import { useRef, useState } from "react";
 import { defaultContextDraft, selectionBytes, selectionError } from "../../../../shared/context-pooling";
 import type { ContextGrantSummary, ContextSelectionDraft } from "../../../../shared/context-pooling";
@@ -47,7 +48,7 @@ export function ContextPoolingView() {
         <option value="">自由入力</option>{templates.map(value => <option key={value}>{value}</option>)}
       </Select></label>
       <label className="block">観点<textarea className="ui-input block w-full" maxLength={2048} placeholder={copy.anglePlaceholder} value={draft.angle} onChange={event => update({ angle: event.target.value })} /></label>
-      <label className="block">送信する切り出し本文<textarea className="ui-input block w-full" rows={6} value={draft.body} onChange={event => update({ body: event.target.value })} /></label>
+      <label className="block">送信する切り出し本文<textarea className="ui-input block w-full" rows={6} spellCheck={false} autoComplete="off" value={draft.body} onChange={event => update({ body: event.target.value })} /></label>
       <p>切り出しの大きさ: {(bytes / 1024).toFixed(2)} KB / 上限 64 KB</p>
       <p>送信時の JSON 表現を UTF-8 で数えます。</p>
       <fieldset className="space-y-3"><legend>送り方</legend><p>{copy.lead}</p>
@@ -68,8 +69,8 @@ export function ContextPoolingView() {
       <p>{copy.beforeSend}</p>
       {error && <p role="alert">{error}</p>}
       <button className="ui-button" disabled={!!error || busy || !bridge?.prepareContext} onClick={() => { void prepare(); }}>送る前に確認</button>
-      <div><button className="ui-button" disabled>送る</button> <span>送り方: {modes[draft.deliveryMode].label} · 期限 {draft.lifetimeHours}時間 · {(bytes / 1024).toFixed(2)} KB</span></div>
-      <p>依頼の送信と受信箱への接続は準備中です。この画面では送信・保存しません。</p>
+      <ContextSendPanel draft={draft} ready={!!summary && !error && !busy} />
+      <p>下書きはメモリだけに置きます。受信箱への接続は準備中です。</p>
       {message && <p role="status">{message}</p>}
       {summary && <GrantSummary summary={summary} />}
     </section>
