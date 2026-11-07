@@ -138,6 +138,10 @@ const bridge = {
     cancelContext: () => ipcRenderer.invoke("sealbridge:context-cancel"),
     resetContext: () => ipcRenderer.invoke("sealbridge:context-reset"),
     prepareContext: draft => ipcRenderer.invoke("sealbridge:context-prepare", draft),
+    receivedAudits: () => ipcRenderer.invoke("sealbridge:received-audits"),
+    deleteReceivedAudit: id => typeof id === "string" && id.length <= 180 && !id.includes("..") &&
+      /^[A-Za-z0-9][A-Za-z0-9._-]*\.jsonl$/.test(id) && !id.endsWith(".tasks.jsonl") && !id.endsWith(".errors.jsonl")
+      ? ipcRenderer.invoke("sealbridge:received-audit-delete", id) : Promise.resolve({ ok: false }),
     invites: () => ipcRenderer.invoke("sealbridge:invites"),
     inviteDecision: (id, decision) => typeof id === "string" && /^[a-f0-9-]{36}$/.test(id) && ["confirm", "cancel"].includes(decision)
       ? ipcRenderer.invoke("sealbridge:invite-decision", id, decision) : Promise.resolve({ ok: false }),

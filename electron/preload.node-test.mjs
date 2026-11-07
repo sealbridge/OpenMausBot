@@ -169,7 +169,7 @@ test("a Cloud link arriving before React subscriptions is delivered exactly once
 
 test("Sealbridge bridge forwards only fixed status and retry operations", async () => {
   const before = invocations.length;
-  assert.deepEqual(Object.keys(exposed.api.sealbridge).sort(), ["answerContext", "cancelContext", "contextRecipients", "contextStatus", "inviteDecision", "invites", "pasteInvite", "prepareContext", "receiveAction", "receiveReply", "receiveStatus", "resetContext", "retry", "startContext", "status"]);
+  assert.deepEqual(Object.keys(exposed.api.sealbridge).sort(), ["answerContext", "cancelContext", "contextRecipients", "contextStatus", "deleteReceivedAudit", "inviteDecision", "invites", "pasteInvite", "prepareContext", "receiveAction", "receiveReply", "receiveStatus", "receivedAudits", "resetContext", "retry", "startContext", "status"]);
   await exposed.api.sealbridge.status({ privateKey: "fixture-only" });
   await exposed.api.sealbridge.retry("arbitrary-tool");
   assert.deepEqual(invocations.slice(before), [["sealbridge:status"], ["sealbridge:retry"]]);
@@ -192,6 +192,16 @@ test("context preparation exposes one fixed local channel", async () => {
   const draft = { body: "DCP_FIXED_DUMMY_SECRET_BODY", deliveryMode: "view_only" };
   await exposed.api.sealbridge.prepareContext(draft, "arbitrary-method");
   assert.deepEqual(invocations.slice(before), [["sealbridge:context-prepare", draft]]);
+});
+
+test("received audits use only fixed local IPC operations", async () => {
+  const before = invocations.length;
+  await exposed.api.sealbridge.receivedAudits("ignored");
+  await exposed.api.sealbridge.deleteReceivedAudit("../secret.jsonl");
+  await exposed.api.sealbridge.deleteReceivedAudit(12);
+  assert.deepEqual(invocations.slice(before), [["sealbridge:received-audits"]]);
+  await exposed.api.sealbridge.deleteReceivedAudit("11111111-1111-1111-1111-111111111111.jsonl");
+  assert.deepEqual(invocations.slice(before), [["sealbridge:received-audits"], ["sealbridge:received-audit-delete", "11111111-1111-1111-1111-111111111111.jsonl"]]);
 });
 
 test("context sending uses only fixed local IPC operations", async () => {
