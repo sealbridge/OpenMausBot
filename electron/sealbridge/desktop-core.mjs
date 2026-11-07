@@ -1,3 +1,4 @@
+import { createDesktopReceiver, registerContextReceiveIpc } from "./context-receive.mjs";
 import { createContextSender, registerContextSendIpc } from "./context-send.mjs";
 import { registerContextPoolingIpc, createContextPreparation, loadContextSdk } from "./context-pooling.mjs";
 import { clipboard } from "electron";
@@ -18,11 +19,15 @@ export function startDesktopCore({ app, ipcMain, localOnly }) {
   const sender = createContextSender({ service, dataDir: path.join(app.getPath("userData"), "sealbridge-core"),
     runtimeDir: app.isPackaged ? path.join(process.resourcesPath, "sealbridge-runtime") : developmentRuntimeDir });
   registerContextSendIpc({ ipcMain, localOnly, sender });
+  const receiver = createDesktopReceiver({ dataDir: path.join(app.getPath("userData"), "sealbridge-core"),
+    runtimeDir: app.isPackaged ? path.join(process.resourcesPath, "sealbridge-runtime") : developmentRuntimeDir });
+  registerContextReceiveIpc({ ipcMain, localOnly, receiver });
+  app.on("before-quit", () => receiver.stop());
   app.on("before-quit", () => sender.cancel(true));
   registerInviteIpc({ ipcMain, localOnly, clipboard });
   const operate = createInviteProcess({ dataDir: path.join(app.getPath("userData"), "sealbridge-core"),
     runtimeDir: app.isPackaged ? path.join(process.resourcesPath, "sealbridge-runtime") : developmentRuntimeDir });
-  const prepareInvites = status => { if (status.state === "ready") void desktopInvites.ready(operate); return status; };
+  const prepareInvites = status => { if (status.state === "ready") { void desktopInvites.ready(operate); void receiver.start(); } return status; };
   void service.start().then(prepareInvites);
   return service;
 }

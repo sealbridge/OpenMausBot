@@ -1,4 +1,4 @@
-import type { ContextSelectionDraft, ContextPreparation } from "./context-pooling";
+import type { ContextSelectionDraft, ContextPreparation, ContextGrantSummary } from "./context-pooling";
 
 /** Public desktop core state. Secret keys and invitation credentials never cross this bridge. */
 export interface SealbridgeStatus {
@@ -9,6 +9,9 @@ export interface SealbridgeStatus {
 
 /** Fixed local desktop actions; no arbitrary core methods or tool arguments are accepted. */
 export interface SealbridgeBridge {
+  receiveStatus(): Promise<ContextReceiveStatus>;
+  receiveAction(id: string, action: "open" | "discard"): Promise<{ ok: boolean }>;
+  receiveReply(id: number, body: string): Promise<{ ok: boolean }>;
   contextRecipients(): Promise<ContextRecipient[]>;
   startContext(id: string, draft: ContextSelectionDraft): Promise<{ ok: boolean }>;
   contextStatus(): Promise<ContextSendStatus>;
@@ -43,4 +46,14 @@ export interface ContextSendStatus {
   deliverable?: string;
   approval?: { id: number; gate: string; recipient: string; mode: string; angle: string;
     allowedCount: number; deniedCount: number; bytes: number; expiresAt: string; digest: string; deliverable?: string; deliverableDigest?: string };
+}
+
+/** Memory-only projection of SDK quarantine and live human decisions. */
+export interface ContextReceiveStatus {
+  state: string;
+  rows: { id: string; taskId: string; sender: string; state: string; inspectionStatus: string;
+    expiresAt: number; preview?: string; summary?: ContextGrantSummary; canOpen: boolean;
+    inspection?: { verdict: string; findings: { ruleId: string; severity: string; noteCode: string }[] } }[];
+  compose: { id: number; taskId: string; summary?: ContextGrantSummary }[];
+  rejected: { taskId: string; code: string }[];
 }

@@ -128,6 +128,9 @@ const bridge = {
   /** This app's version, and whether this page is this app's own (served by this computer, not a server from the Server menu). */
   app: { version: appVersion, ownPage: isLocalPage },
   sealbridge: {
+    receiveStatus: () => ipcRenderer.invoke("sealbridge:receive-status"),
+    receiveAction: (id, action) => ipcRenderer.invoke("sealbridge:receive-action", id, action),
+    receiveReply: (id, body) => ipcRenderer.invoke("sealbridge:receive-reply", id, body),
     contextRecipients: () => ipcRenderer.invoke("sealbridge:context-recipients"),
     startContext: (id, draft) => ipcRenderer.invoke("sealbridge:context-start", id, draft),
     contextStatus: () => ipcRenderer.invoke("sealbridge:context-status"),

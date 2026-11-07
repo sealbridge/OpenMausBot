@@ -18,7 +18,7 @@ export function ContextSendPanel({ draft, ready }: { draft: ContextSelectionDraf
     return () => { alive = false; clearInterval(timer); };
   }, [bridge]);
   const card = status.approval;
-  const terminal = ["completed", "failed", "cancelled"].includes(status.state);
+  const terminal = ["completed", "failed", "cancelled", "pending", "timed-out"].includes(status.state);
   const start = async () => {
     if (!bridge) return;
     try {
@@ -34,7 +34,7 @@ export function ContextSendPanel({ draft, ready }: { draft: ContextSelectionDraf
       {recipients.map(row => <option key={row.id} value={row.id}>{row.name} · {row.did} · 接続済み</option>)}
     </Select></label>
     <button type="button" className="ui-button" disabled={!ready || !target || (!terminal && status.state !== "idle")} onClick={() => { void start(); }}>送る</button>
-    <p role="status">{({ idle: "下書きの確認は承認ではありません。", starting: "送信を準備しています", approval: "所有者の確認を待っています", sending: "送信中", working: "相手が作業中", waiting: "確認中", completed: "納品の最終確認が完了しました", failed: "送信を完了できませんでした。送り直す場合は下書きから作り直します。", cancelled: "中止しました" } as Record<string, string>)[status.state]}</p>
+    <p role="status">{({ idle: "下書きの確認は承認ではありません。", starting: "送信を準備しています", approval: "所有者の確認を待っています", sending: "送信中", working: "相手が作業中", waiting: "確認中", completed: "納品の最終確認が完了しました", failed: "送信を完了できませんでした。送り直す場合は下書きから作り直します。", cancelled: "中止しました", pending: "相手の側で保留になりました。送り直す場合は下書きから作り直してください。", "timed-out": "待ち時間が過ぎました。相手の保留を開くには送り直しが必要です。" } as Record<string, string>)[status.state]}</p>
     {status.deliverable && <pre className="whitespace-pre-wrap">{status.deliverable}</pre>}
     {status.peerRejected && <p role="alert">相手の版が持ち寄りに対応していない可能性があります</p>}
     {card && <div role="dialog" aria-label="持ち寄りの承認" onKeyDown={event => { if (event.key === "Enter") event.preventDefault(); }}>

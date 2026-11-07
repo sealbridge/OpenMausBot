@@ -26,3 +26,9 @@ export async function executeContextSend({ sdk, owner, signApproval, ask, draft,
     return result;
   } finally { client.stopDelivery(); }
 }
+
+export function contextSendFailureState(error) {
+  if (error?.code === "PENDING_OWNER_APPROVAL") return "pending";
+  if (/TIMEOUT|TIMED_OUT|TASK_INTERRUPTED/.test(error?.code ?? "") || /TIMEOUT|TIMED_OUT|TASK_INTERRUPTED/.test(error?.message ?? "")) return "timed-out";
+  return "failed";
+}
