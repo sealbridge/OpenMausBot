@@ -1,4 +1,5 @@
 import { ContextReceivePanel } from "./ContextReceivePanel";
+import { ContextReceivedPanel } from "./ContextReceivedPanel";
 import { ContextSendPanel } from "./ContextSendPanel";
 import { useRef, useState } from "react";
 import { defaultContextDraft, selectionBytes, selectionError } from "../../../../shared/context-pooling";
@@ -60,9 +61,8 @@ export function ContextPoolingView() {
         </label>)}
         <p>{copy.preparing}</p>
       </fieldset>
-      {draft.deliveryMode === "hand_over" && <><p>{copy.handOverExtra}</p>
-        <label className="block"><input type="checkbox" checked={false} disabled /> {copy.inputLabel}</label>
-        <p>入力を残す許可は準備中です。スイッチはオンにできません。</p></>}
+      {draft.deliveryMode === "view_only" && <p>閲覧のみでも、受け手の監査ファイルには答えの中身が残ります。</p>}
+      {draft.deliveryMode === "hand_over" && <p>{copy.handOverExtra}</p>}
       <p>{modes[draft.deliveryMode].retention}</p>
       <label className="block">有効期限（時間）<input className="ui-input" type="number" min={1} max={168} value={draft.lifetimeHours}
         onChange={event => update({ lifetimeHours: event.target.valueAsNumber })} /></label>
@@ -76,5 +76,6 @@ export function ContextPoolingView() {
       {summary && <GrantSummary summary={summary} />}
     </section>
     <ContextReceivePanel />
+    <ContextReceivedPanel />
   </details>;
 }

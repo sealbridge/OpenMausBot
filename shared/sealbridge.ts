@@ -19,6 +19,8 @@ export interface SealbridgeBridge {
   cancelContext(): Promise<{ ok: boolean }>;
   resetContext(): Promise<void>;
   prepareContext(draft: ContextSelectionDraft): Promise<ContextPreparation>;
+  receivedAudits(): Promise<ReceivedAuditRecord[]>;
+  deleteReceivedAudit(id: string): Promise<{ ok: boolean }>;
   invites(): Promise<SealbridgeInvite[]>;
   inviteDecision(id: string, decision: "confirm" | "cancel"): Promise<{ ok: boolean; state?: string }>;
   pasteInvite(): Promise<{ ok: boolean }>;
@@ -46,6 +48,15 @@ export interface ContextSendStatus {
   deliverable?: string;
   approval?: { id: number; gate: string; recipient: string; mode: string; angle: string;
     allowedCount: number; deniedCount: number; bytes: number; expiresAt: string; digest: string; deliverable?: string; deliverableDigest?: string };
+}
+
+/** Verified audit projection. The selection body is never included. */
+export interface ReceivedAuditRecord {
+  id: string;
+  verified: boolean;
+  outputRetained: boolean;
+  deliveryMode?: "view_only" | "approval_redelegation" | "hand_over";
+  deliverable?: string;
 }
 
 /** Memory-only projection of SDK quarantine and live human decisions. */

@@ -45,10 +45,12 @@ it("defaults to view only, disables approval, checks with SDK bridge and never s
     expect(prepareContext).not.toHaveBeenCalled();
     for (const mode of Object.values(modes)) expect(host.textContent).toContain(mode.description);
     expect(Array.from(host.querySelectorAll("button")).find(b => b.textContent === "送る")!.disabled).toBe(true);
+    expect(host.textContent).toContain("閲覧のみでも、受け手の監査ファイルには答えの中身が残ります。");
     flushSync(() => host.querySelector<HTMLInputElement>('[value="hand_over"]')!.click());
-    const retention = host.querySelector<HTMLInputElement>('[type="checkbox"]')!;
-    expect(retention.checked).toBe(false); expect(retention.disabled).toBe(true);
+    expect(host.querySelector('[type="checkbox"]')).toBeNull();
+    expect(host.textContent).not.toContain(copy.inputLabel);
     expect(host.textContent).toContain(copy.handOverExtra);
+    expect(host.textContent).not.toContain("閲覧のみでも、受け手の監査ファイルには答えの中身が残ります。");
   } finally { flushSync(() => root.unmount()); Object.assign(window, { ogb: previous }); }
 });
 
