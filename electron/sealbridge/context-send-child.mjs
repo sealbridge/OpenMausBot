@@ -3,7 +3,7 @@ import { realpathSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createInterface } from "node:readline";
 import { resolveCoreContext } from "./bootstrap.mjs";
-import { executeContextSend } from "./context-send-core.mjs";
+import { executeContextSend, contextSendFailureState } from "./context-send-core.mjs";
 
 export function createProtocolPeers(observed, connected) {
   return {
@@ -63,8 +63,9 @@ if (process.argv[1] && normalizedEntryPath(process.argv[1]) === normalizedEntryP
       await executeContextSend({ sdk, owner, signApproval, ask, draft, target, auditPath,
         identityOptions, signal: controller.signal, send, clientOptions: { protocolPeers } });
     } catch (error) {
-      send({ type: "result", state: controller.signal.aborted ? "cancelled" : "failed",
-        peerRejected: error?.message?.startsWith("PEER_REJECTED:") === true || error?.code === "PROPOSAL_REJECTED" });
+      const state = controller.signal.aborted ? "cancelled" : contextSendFailureState(error);
+      send({ type: "result", state, peerRejected: state === "failed" &&
+        (error?.message?.startsWith("PEER_REJECTED:") === true || error?.code === "PROPOSAL_REJECTED") });
     } finally { if (running) { lines.close(); process.stdin.destroy(); } }
   });
 }

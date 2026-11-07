@@ -68,7 +68,7 @@ export function createContextSender({ service, runtimeDir, dataDir, launch = lau
         const timer = setTimeout(() => { session.state = "failed"; child.kill(); }, 660000);
         child.once("close", () => {
           clearTimeout(timer); session.approval = undefined;
-          if (!["completed", "cancelled", "failed"].includes(session.state)) session.state = "failed";
+          if (!["completed", "cancelled", "failed", "pending", "timed-out"].includes(session.state)) session.state = "failed";
           void rm(home, { recursive: true, force: true });
         });
         child.stdin.write(JSON.stringify({ type: "start", draft, target: { peerOwnerDid: target.peerOwnerDid,
@@ -86,7 +86,7 @@ export function createContextSender({ service, runtimeDir, dataDir, launch = lau
       return { ok: true };
     },
     cancel(force = false) {
-      if (active && !["completed", "failed", "cancelled"].includes(active.state)) {
+      if (active && !["completed", "failed", "cancelled", "pending", "timed-out"].includes(active.state)) {
         const session = active;
         session.child.stdin.write('{"type":"cancel"}\n');
         if (force) session.child.kill();
@@ -98,7 +98,7 @@ export function createContextSender({ service, runtimeDir, dataDir, launch = lau
       }
       return { ok: true };
     },
-    reset() { if (active && ["completed", "cancelled", "failed"].includes(active.state)) active = undefined; },
+    reset() { if (active && ["completed", "cancelled", "failed", "pending", "timed-out"].includes(active.state)) active = undefined; },
   };
 }
 

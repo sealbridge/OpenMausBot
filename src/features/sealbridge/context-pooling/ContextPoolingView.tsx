@@ -1,3 +1,4 @@
+import { ContextReceivePanel } from "./ContextReceivePanel";
 import { ContextSendPanel } from "./ContextSendPanel";
 import { useRef, useState } from "react";
 import { defaultContextDraft, selectionBytes, selectionError } from "../../../../shared/context-pooling";
@@ -70,9 +71,10 @@ export function ContextPoolingView() {
       {error && <p role="alert">{error}</p>}
       <button className="ui-button" disabled={!!error || busy || !bridge?.prepareContext} onClick={() => { void prepare(); }}>送る前に確認</button>
       <ContextSendPanel draft={draft} ready={!!summary && !error && !busy} />
-      <p>下書きはメモリだけに置きます。受信箱への接続は準備中です。</p>
+      <p>下書きはメモリだけに置きます。</p>
       {message && <p role="status">{message}</p>}
       {summary && <GrantSummary summary={summary} />}
     </section>
+    <ContextReceivePanel />
   </details>;
 }
